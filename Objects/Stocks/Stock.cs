@@ -2,52 +2,67 @@ namespace Objects.Stocks
 {
     class Stock
     {
-        public Stock()
+        public Stock(string name, string shortName, string code, StockType type)
         {
-            Name = string.Empty;
-            Short = string.Empty;
-            Code = string.Empty;
+            Name = name;
+            Short = shortName;
+            Code = code;
+            SType = type;
         }
 
         public string Name { get; init; }
         public string Short { get; init; }
         public string Code { get; init; }
+        public StockType SType { get; init; }
 
-        private StockMinute[] Minutely { get; set; }
-        private StockHour[] Hourly { get; set; }
-        private StockDay[] Daily { get; set; }
-        private StockWeek[] Weekly { get; set; }
-        private StockYear[] Yearly { get; set; }
-
-        internal StockPeriode[] GroupInto(StockPeriode[] stackToGroup, int groupSize)
+        internal List<StockMinute> Minutely { get; init; } = new List<StockMinute>();
+        internal List<StockDay> Daily { get; init; } = new List<StockDay>();
+        internal List<StockWeek> Weekly { get; init; } = new List<StockWeek>();
+        internal List<StockYear> Yearly { get; init; } = new List<StockYear>();
+          
+        private StockDay Day {
+            get { return GetLastX(60 * 24) as StockDay; }
+        }
+        private StockWeek Week
         {
-            int returnStackLength = (stackToGroup.Length / groupSize) + 1;
-            StockPeriode[] returnStack = new StockPeriode[stackToGroup.Length / groupSize +1];
-
-            for (int k = 0; k < returnStackLength; k++)
-            {
-                decimal open = stackToGroup.First().Open;
-                decimal close = stackToGroup.Last().Close;
-                decimal high = 0;
-                decimal low = 0;
-                for (int i = 0; i < stackToGroup.Length; i++)
-                {
-                    StockPeriode current = stackToGroup[i];
-
-                    if (current.High > high)
-                    {
-                        high = current.High;
-                    }
-                    if (current.Low < low)
-                    {
-                        low = current.Low;
-                    }
-                }
-                
-            }
-
-
+            get { return GetLastX(60 * 24 * 7) as StockWeek; }
+        }
+        private StockYear Year
+        {
+            get { return GetLastX(60 * 24 * 7 * 52) as StockYear; }
         }
         
+        private StockPeriode GetLastX(int minToGroup)
+        {
+            if (Minutely.Count < 1)
+            {
+                return null;
+            }
+            if (Minutely.Count < minToGroup)
+            {
+                minToGroup = Minutely.Count;
+            }
+            List<StockMinute> lastMinutes = Minutely.TakeLast(minToGroup).ToList();
+
+            StockPeriode lastPeriode = new StockHour();
+
+            lastPeriode.Open = lastMinutes.First().Open;
+            foreach (StockMinute minute in lastMinutes)
+            {
+                if (lastPeriode.High < minute.High)
+                {
+                    lastPeriode.High = minute.High;
+                }
+
+                if (lastPeriode.Low > minute.Low)
+                {
+                    lastPeriode.Low = minute.Low;
+                }
+            }
+            lastPeriode.Close = lastMinutes.Last().Close;
+            lastPeriode.CloseAdj = lastMinutes.Last().CloseAdj;
+
+            return lastPeriode;
+        }
     }
 }
