@@ -2,16 +2,16 @@ namespace Objects.Stocks
 {
     class Stock
     {
-        public Stock(string name, string shortName, string code, StockType type)
+        public Stock(string name, string symbolName, string code, StockType type)
         {
             Name = name;
-            Short = shortName;
+            Symbol = symbolName;
             Code = code;
             SType = type;
         }
 
         public string Name { get; init; }
-        public string Short { get; init; }
+        public string Symbol { get; init; }
         public string Code { get; init; }
         public StockType SType { get; init; }
 

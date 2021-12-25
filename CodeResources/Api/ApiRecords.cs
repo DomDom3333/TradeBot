@@ -4,8 +4,8 @@ namespace CodeResources.Api
 {
     static class ApiRecords
     {
-        internal static string Id => "991b05de8e437ef62d3a7a871c4439f6";
-        internal static string Secret => "b2f99e364009e54394e589249cbdf6e7e5e9b82c";
+        internal static string Id => "PK36DFD8I4I6Q9HF5I00";
+        internal static string Secret => "cC8yhRL0UJaPkFbF6NyLrmbeYOQCpOfFDj7moKoa";
         internal static IAlpacaTradingClient AlpacaTradingClient { get; set; }
     }
 }
