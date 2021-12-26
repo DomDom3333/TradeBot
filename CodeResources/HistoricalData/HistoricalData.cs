@@ -7,8 +7,8 @@ public class HistoricalData
 {
     internal static void ReadAllHistoricalData()
     {
-        CurrentStockData.Cryptos.AddRange(ReadStockFiles(@"/home/dominikessenhofer/Documents/Stock History/Crypto", StockType.Crypto));
-        CurrentStockData.CompanyStock.AddRange(ReadStockFiles(@"/home/dominikessenhofer/Documents/Stock History/Stocks", StockType.Stock));
+        CurrentStockData.Cryptos.AddRange(ReadStockFiles(Appsettings.Main.HistoricDataPathCrypto, StockType.Crypto));
+        CurrentStockData.CompanyStock.AddRange(ReadStockFiles(Appsettings.Main.HistoricDatapathStocks, StockType.Stock));
     }
 
     private static List<Stock> ReadStockFiles(string stockPath, StockType type)

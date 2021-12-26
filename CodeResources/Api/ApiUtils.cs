@@ -34,7 +34,7 @@ namespace CodeResources.Api
 
         private static void LogIn()
         {
-            if (Appsettings.Main.isLive)
+            if (Appsettings.Main.IsLive)
             {
                 Console.WriteLine("Running on LIVE version!");
                 ApiRecords.AlpacaTradingClient = Environments.Live

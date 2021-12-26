@@ -29,19 +29,24 @@ namespace TradeBot
                 }
             }
 
+            var watchlist = ApiRecords.AlpacaTradingClient.CreateWatchListAsync(new NewWatchListRequest("My Watchlist"))
+                .Result;
+            var asset = ApiRecords.AlpacaTradingClient.GetAssetAsync("AMD").Result;
+            var history = ApiRecords.AlpacaTradingClient.AddAssetIntoWatchListByNameAsync(new ChangeWatchListRequest<string>(Guid.NewGuid().ToString(), asset.Symbol)).Result;
+            
             Console.Read();
         }
 
         private static void ReadAppsettings()
         {
             string appsettingsName = "appsettings.";
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-            {
-                appsettingsName += ("development.json");
-            }
-            else if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
             {
                 appsettingsName += ("production.json");
+            }
+            else if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                appsettingsName += ("development.json");
             }
 
             var builder = new ConfigurationBuilder()
@@ -50,8 +55,12 @@ namespace TradeBot
             
             IConfiguration config = builder.Build();
 
-            var secMain = config.GetSection("Main");
-            Appsettings.Main.isLive = secMain.GetValue<bool>("isLive");
+            IConfigurationSection? secMain = config.GetSection("Main");
+            Appsettings.Main.IsLive = secMain.GetValue<bool>("isLive");
+            Appsettings.Main.TradeCrypto = secMain.GetValue<bool>("TradeCrypto");
+            Appsettings.Main.TradeStock = secMain.GetValue<bool>("TradeStock");
+            Appsettings.Main.HistoricDataPathCrypto = secMain.GetValue<string>("HistoricDataPathCrypto");
+            Appsettings.Main.HistoricDatapathStocks = secMain.GetValue<string>("HistoricDataPathStocks");
         }
         
     }
