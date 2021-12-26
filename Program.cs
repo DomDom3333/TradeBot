@@ -14,7 +14,7 @@ namespace TradeBot
         public static async Task Main()
         {
             ReadAppsettings();
-            CodeResources.HistoricalData.HistoricalData.ReadAllHistoricalData();
+            //CodeResources.HistoricalData.HistoricalData.ReadAllHistoricalData();
 
             // First, open the API connection
             ApiUtils.InitApi();
@@ -38,10 +38,7 @@ namespace TradeBot
 
         private static void ResubToItems()
         {
-            foreach (string subbedItem in ApiRecords.SubbedItems)
-            {
-                ApiRecords.Subs.Add(ApiRecords.CryptoStreamingClient.GetTradeSubscription(subbedItem));
-            }
+            DownloadHistories();
 
             foreach (IAlpacaDataSubscription<ITrade> sub in ApiRecords.Subs)
             {
@@ -50,6 +47,26 @@ namespace TradeBot
                 {
                     Strats.RunStrategy(trade);
                 };
+            }
+        }
+
+        private static void DownloadHistories()
+        {
+            foreach (string subbedItem in ApiRecords.SubbedItems)
+            {
+                IAlpacaDataSubscription<ITrade> newSub = ApiRecords.CryptoStreamingClient.GetTradeSubscription(subbedItem);
+                if (newSub == null)
+                {
+                    Console.WriteLine($"The Asset with Symbol {subbedItem} cannot be found");
+                    continue;
+                    
+                }
+                ApiRecords.Subs.Add(newSub);
+                
+                //Gets History
+                Objects.WorkingData.History.Add(subbedItem, ApiRecords.CryptoDataClient.GetHistoricalBarsAsync(
+                    new HistoricalCryptoBarsRequest(subbedItem,
+                        DateTime.Today.AddYears(-1), DateTime.Now, BarTimeFrame.Minute)).Result);
             }
         }
 
