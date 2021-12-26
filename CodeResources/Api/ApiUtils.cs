@@ -19,7 +19,7 @@ namespace CodeResources.Api
         private static bool TestConnection()
         {
             // Get our account information.
-            var account =  ApiRecords.AlpacaTradingClient.GetAccountAsync().Result;
+            var account =  ApiRecords.TradingClient.GetAccountAsync().Result;
 
             // Check if our account is restricted from trading.
             if (account.IsTradingBlocked)
@@ -37,14 +37,20 @@ namespace CodeResources.Api
             if (Appsettings.Main.IsLive)
             {
                 Console.WriteLine("Running on LIVE version!");
-                ApiRecords.AlpacaTradingClient = Environments.Live
-                    .GetAlpacaTradingClient(new SecretKey(ApiRecords.Id, ApiRecords.Secret));
+                SecretKey secretKey = new SecretKey(ApiRecords.Id, ApiRecords.Secret);
+                ApiRecords.TradingClient = Environments.Live
+                    .GetAlpacaTradingClient(secretKey);
             }
             else
             {
+                SecretKey secretKey = new SecretKey(ApiRecords.Id, ApiRecords.Secret);
                 Console.WriteLine("Running on PAPER version!");
-                ApiRecords.AlpacaTradingClient = Environments.Paper
-                    .GetAlpacaTradingClient(new SecretKey(ApiRecords.Id, ApiRecords.Secret));
+                ApiRecords.TradingClient = Environments.Paper.GetAlpacaTradingClient(new SecretKey(ApiRecords.Id, ApiRecords.Secret));
+                ApiRecords.CryptoDataClient = Environments.Paper.GetAlpacaCryptoDataClient(secretKey);
+                ApiRecords.CryptoStreamingClient = Environments.Paper.GetAlpacaCryptoStreamingClient(secretKey);
+
+
+                ApiRecords.CryptoStreamingClient.ConnectAndAuthenticateAsync();
             }
         }
     }

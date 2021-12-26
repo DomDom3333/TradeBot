@@ -4,11 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic.FileIO;
 using Objects.Stocks;
 using TradeBot.CodeResources;
+using TradeBot.Strategies;
 
 namespace TradeBot
 {
     internal static class Program
     {
+        public static Strategies.MainStrategy Strats { get; set; } = new MainStrategy();
         public static async Task Main()
         {
             ReadAppsettings();
@@ -17,7 +19,7 @@ namespace TradeBot
             // First, open the API connection
             ApiUtils.InitApi();
 
-            var clock = await ApiRecords.AlpacaTradingClient.GetClockAsync();
+            var clock = await ApiRecords.TradingClient.GetClockAsync();
             if (clock != null)
             {
                 Console.WriteLine(
@@ -29,12 +31,26 @@ namespace TradeBot
                 }
             }
 
-            var watchlist = ApiRecords.AlpacaTradingClient.CreateWatchListAsync(new NewWatchListRequest("My Watchlist"))
-                .Result;
-            var asset = ApiRecords.AlpacaTradingClient.GetAssetAsync("AMD").Result;
-            var history = ApiRecords.AlpacaTradingClient.AddAssetIntoWatchListByNameAsync(new ChangeWatchListRequest<string>(Guid.NewGuid().ToString(), asset.Symbol)).Result;
-            
+            ResubToItems();
+
             Console.Read();
+        }
+
+        private static void ResubToItems()
+        {
+            foreach (string subbedItem in ApiRecords.SubbedItems)
+            {
+                ApiRecords.Subs.Add(ApiRecords.CryptoStreamingClient.GetTradeSubscription(subbedItem));
+            }
+
+            foreach (IAlpacaDataSubscription<ITrade> sub in ApiRecords.Subs)
+            {
+                ApiRecords.CryptoStreamingClient.SubscribeAsync(sub);
+                sub.Received += (trade) =>
+                {
+                    Strats.RunStrategy(trade);
+                };
+            }
         }
 
         private static void ReadAppsettings()
