@@ -1,68 +1,102 @@
+using Alpaca.Markets;
+using CodeResources.Api;
+using TradeBot.CodeResources;
+
 namespace Objects.Stocks
 {
     class Stock
     {
-        public Stock(string name, string symbolName, string code, StockType type)
+        public Stock(string name, string symbolName, Guid code, AssetClass type)
         {
             Name = name;
             Symbol = symbolName;
             Code = code;
             SType = type;
         }
-
+        
         public string Name { get; init; }
         public string Symbol { get; init; }
-        public string Code { get; init; }
-        public StockType SType { get; init; }
+        public Guid Code { get; init; }
+        public AssetClass SType { get; init; }
+        public bool ProcessingLock { get; set; }
 
-        internal List<StockMinute> Minutely { get; init; } = new List<StockMinute>();
-        internal List<StockDay> Daily { get; init; } = new List<StockDay>();
-        internal List<StockWeek> Weekly { get; init; } = new List<StockWeek>();
-        internal List<StockYear> Yearly { get; init; } = new List<StockYear>();
-          
-        private StockDay Day {
-            get { return GetLastX(60 * 24) as StockDay; }
-        }
-        private StockWeek Week
+        public bool HasPosition
         {
-            get { return GetLastX(60 * 24 * 7) as StockWeek; }
-        }
-        private StockYear Year
-        {
-            get { return GetLastX(60 * 24 * 7 * 52) as StockYear; }
-        }
-        
-        private StockPeriode GetLastX(int minToGroup)
-        {
-            if (Minutely.Count < 1)
+            get
             {
-                return null;
+                return !(Position == null);
             }
-            if (Minutely.Count < minToGroup)
-            {
-                minToGroup = Minutely.Count;
-            }
-            List<StockMinute> lastMinutes = Minutely.TakeLast(minToGroup).ToList();
+        }
+        public PositionInformation Position { get; set; }
 
-            StockPeriode lastPeriode = new StockHour();
+        public decimal AverageBuy { get; set; }
+        public decimal AverageSell { get; set; }
 
-            lastPeriode.Open = lastMinutes.First().Open;
-            foreach (StockMinute minute in lastMinutes)
+        private IAlpacaDataSubscription<ITrade> _TradeSub;
+        public IAlpacaDataSubscription<ITrade> TradeSub
+        {
+            get
             {
-                if (lastPeriode.High < minute.High)
+                if (_TradeSub == null)
                 {
-                    lastPeriode.High = minute.High;
+                    _TradeSub = ApiRecords.CryptoStreamingClient.GetTradeSubscription(Symbol);
                 }
 
-                if (lastPeriode.Low > minute.Low)
+                return _TradeSub;
+            }
+        }
+
+        private IAlpacaDataSubscription<IQuote> _QuoteSub;
+        public IAlpacaDataSubscription<IQuote> QuoteSub
+        {
+            get
+            {
+                if (_QuoteSub == null)
                 {
-                    lastPeriode.Low = minute.Low;
+                    _QuoteSub = ApiRecords.CryptoStreamingClient.GetQuoteSubscription(Symbol);
+                }
+
+                return _QuoteSub;
+            }
+        }
+
+        internal void UpdateHostoricalData(IReadOnlyList<IBar> barHistory, IReadOnlyList<IQuote> quoteHostory)
+        {
+            MinutelyBarData = barHistory;
+            MinutelyPriceData = quoteHostory;
+            Analytics.GetAverageBuySell(this);
+        }
+        public IReadOnlyList<IBar> MinutelyBarData { get; private set; }
+        public IReadOnlyList<IQuote> MinutelyPriceData { get; private set; }
+
+        public class PositionInformation
+        {
+            public decimal QuantityOwned { get; set; } = 0;
+            public decimal BuyPrice { get; set; } = 0;
+            public decimal? ChangePercent { get; set; } = 0;
+            public decimal? CurrentPrice { get; set; } = 0;
+            public decimal Profit
+            {
+                get
+                {
+                    if (CurrentPrice.HasValue)
+                    {
+                        return CurrentPrice.Value - BuyPrice;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
                 }
             }
-            lastPeriode.Close = lastMinutes.Last().Close;
-            lastPeriode.CloseAdj = lastMinutes.Last().CloseAdj;
-
-            return lastPeriode;
+            public PositionInformation(decimal quantityOwned, decimal buyPrice, decimal? changePercent, decimal? currentPrice)
+            {
+                QuantityOwned = quantityOwned;
+                BuyPrice = buyPrice;
+                ChangePercent = changePercent;
+                CurrentPrice = currentPrice;
+            }
         }
     }
+        
 }

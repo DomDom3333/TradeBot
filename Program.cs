@@ -1,9 +1,11 @@
 ﻿using Alpaca.Markets;
+using AlpacaExample.CodeResources;
 using CodeResources.Api;
 using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic.FileIO;
 using Objects.Stocks;
 using TradeBot.CodeResources;
+using TradeBot.Objects;
 using TradeBot.Strategies;
 
 namespace TradeBot
@@ -11,6 +13,7 @@ namespace TradeBot
     internal static class Program
     {
         public static Strategies.MainStrategy Strats { get; set; } = new MainStrategy();
+        public static Timers TimeKeeper { get; set; }
         public static async Task Main()
         {
             ReadAppsettings();
@@ -19,18 +22,8 @@ namespace TradeBot
             // First, open the API connection
             ApiUtils.InitApi();
 
-            var clock = await ApiRecords.TradingClient.GetClockAsync();
-            if (clock != null)
-            {
-                Console.WriteLine(
-                    "Timestamp: {0}, NextOpen: {1}, NextClose: {2}",
-                    clock.TimestampUtc, clock.NextOpenUtc, clock.NextCloseUtc);
-                if (!clock.IsOpen)
-                {
-                    Console.WriteLine("Market is currently CLOSED");
-                }
-            }
-
+            TimeKeeper = new Timers();
+            TimeKeeper.AddSub(TimeKeeper.MinutelySynced, ApiUtils.RefreshHistory);
             ResubToItems();
 
             Console.Read();
@@ -38,35 +31,56 @@ namespace TradeBot
 
         private static void ResubToItems()
         {
-            DownloadHistories();
-
-            foreach (IAlpacaDataSubscription<ITrade> sub in ApiRecords.Subs)
+            GetStocks();
+            ApiUtils.RefreshHistory();
+            foreach (Stock stock in WorkingData.StockList)
             {
-                ApiRecords.CryptoStreamingClient.SubscribeAsync(sub);
-                sub.Received += (trade) =>
+                ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
+                stock.TradeSub.Received += (trade) =>
                 {
-                    Strats.RunStrategy(trade);
+                    //Strats.RunStrategy(trade);
+                };
+                ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.QuoteSub);
+                stock.QuoteSub.Received += (quote) =>
+                {
+                    if (stock.ProcessingLock)
+                        return;
+                    stock.ProcessingLock = true;
+                    Strats.RunStrategy(quote, stock);
+                    stock.ProcessingLock = false;
                 };
             }
         }
 
-        private static void DownloadHistories()
+        private static void GetStocks()
         {
-            foreach (string subbedItem in ApiRecords.SubbedItems)
+            //IReadOnlyList<IAsset> test = ApiRecords.TradingClient.ListAssetsAsync(new AssetsRequest()).Result;
+
+            foreach (string stock in ApiRecords.SubbedItems)
             {
-                IAlpacaDataSubscription<ITrade> newSub = ApiRecords.CryptoStreamingClient.GetTradeSubscription(subbedItem);
-                if (newSub == null)
+                IAsset asset = null;
+                IPosition position = null;
+                try
                 {
-                    Console.WriteLine($"The Asset with Symbol {subbedItem} cannot be found");
-                    continue;
-                    
+                    asset = ApiRecords.TradingClient.GetAssetAsync(stock).Result;
+                    position = ApiRecords.TradingClient.GetPositionAsync(asset.Symbol).Result;
                 }
-                ApiRecords.Subs.Add(newSub);
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Could not find Symbol {stock}");
+                    continue;
+                }
+
+                if (asset == null)
+                    continue;
                 
-                //Gets History
-                Objects.WorkingData.History.Add(subbedItem, ApiRecords.CryptoDataClient.GetHistoricalBarsAsync(
-                    new HistoricalCryptoBarsRequest(subbedItem,
-                        DateTime.Today.AddYears(-1), DateTime.Now, BarTimeFrame.Minute)).Result);
+                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class);
+                if (position != null)
+                {
+                    newStock.Position = new Stock.PositionInformation(position.Quantity, position.AverageEntryPrice, position.AssetChangePercent, position.AssetCurrentPrice);
+                }
+                Console.WriteLine($"Added Stock {asset.Name}.");
+                WorkingData.StockList.Add(newStock);
             }
         }
 
@@ -89,11 +103,13 @@ namespace TradeBot
             IConfiguration config = builder.Build();
 
             IConfigurationSection? secMain = config.GetSection("Main");
-            Appsettings.Main.IsLive = secMain.GetValue<bool>("isLive");
+            Appsettings.Main.IsLive = secMain.GetValue<bool>("IsLive");
             Appsettings.Main.TradeCrypto = secMain.GetValue<bool>("TradeCrypto");
             Appsettings.Main.TradeStock = secMain.GetValue<bool>("TradeStock");
             Appsettings.Main.HistoricDataPathCrypto = secMain.GetValue<string>("HistoricDataPathCrypto");
             Appsettings.Main.HistoricDatapathStocks = secMain.GetValue<string>("HistoricDataPathStocks");
+            Appsettings.Main.ApiId = secMain.GetValue<string>("ApiId");
+            Appsettings.Main.ApiSecret = secMain.GetValue<string>("ApiSecret");
         }
         
     }

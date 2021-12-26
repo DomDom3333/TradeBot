@@ -1,8 +1,23 @@
 using Alpaca.Markets;
+using CodeResources.Api;
+using Objects.Stocks;
 
 namespace TradeBot.Objects;
 
-public static class WorkingData
+internal static class WorkingData
 {
-    public static Dictionary<string, IMultiPage<IBar>> History { get; set; }
+    internal static IAccount Account { get; private set; }
+    internal static List<Stock> StockList { get; } = new List<Stock>();
+
+    internal static void AddAccount(IAccount acc)
+    {
+        if (Account != null)
+        {
+            throw new Exception("Account can not be switched while application is running.");
+        }
+        else
+        {
+            Account = acc;
+        }
+    }
 }

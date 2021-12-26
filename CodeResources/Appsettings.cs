@@ -9,5 +9,7 @@ public static class Appsettings
         internal static bool TradeStock { get; set; }
         internal static string HistoricDataPathCrypto { get; set; }
         internal static string HistoricDatapathStocks { get; set; }
+        internal static string ApiId { get; set; }
+        internal static string ApiSecret { get; set; }
     }
 }
