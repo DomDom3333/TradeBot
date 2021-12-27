@@ -4,9 +4,9 @@ using TradeBot.CodeResources;
 
 namespace Objects.Stocks
 {
-    class Stock
+    internal class Stock
     {
-        public Stock(string name, string symbolName, Guid code, AssetClass type)
+        internal Stock(string name, string symbolName, Guid code, AssetClass type)
         {
             Name = name;
             Symbol = symbolName;
@@ -14,26 +14,26 @@ namespace Objects.Stocks
             SType = type;
         }
         
-        public string Name { get; init; }
-        public string Symbol { get; init; }
-        public Guid Code { get; init; }
-        public AssetClass SType { get; init; }
-        public bool ProcessingLock { get; set; }
+        internal string Name { get; init; }
+        internal string Symbol { get; init; }
+        internal Guid Code { get; init; }
+        internal AssetClass SType { get; init; }
+        internal bool ProcessingLock { get; set; }
 
-        public bool HasPosition
+        internal bool HasPosition
         {
             get
             {
                 return !(Position == null);
             }
         }
-        public PositionInformation Position { get; set; }
+        internal PositionInformation Position { get; set; }
 
-        public decimal AverageBuy { get; set; }
-        public decimal AverageSell { get; set; }
+        internal decimal AverageBuy { get; set; }
+        internal decimal AverageSell { get; set; }
 
         private IAlpacaDataSubscription<ITrade> _TradeSub;
-        public IAlpacaDataSubscription<ITrade> TradeSub
+        internal IAlpacaDataSubscription<ITrade> TradeSub
         {
             get
             {
@@ -47,7 +47,7 @@ namespace Objects.Stocks
         }
 
         private IAlpacaDataSubscription<IQuote> _QuoteSub;
-        public IAlpacaDataSubscription<IQuote> QuoteSub
+        internal IAlpacaDataSubscription<IQuote> QuoteSub
         {
             get
             {
@@ -66,16 +66,17 @@ namespace Objects.Stocks
             MinutelyPriceData = quoteHostory;
             Analytics.GetAverageBuySell(this);
         }
-        public IReadOnlyList<IBar> MinutelyBarData { get; private set; }
-        public IReadOnlyList<IQuote> MinutelyPriceData { get; private set; }
+        internal IReadOnlyList<IBar> MinutelyBarData { get; private set; }
+        internal IReadOnlyList<IQuote> MinutelyPriceData { get; private set; }
 
-        public class PositionInformation
+        internal class PositionInformation
         {
-            public decimal QuantityOwned { get; set; } = 0;
-            public decimal BuyPrice { get; set; } = 0;
-            public decimal? ChangePercent { get; set; } = 0;
-            public decimal? CurrentPrice { get; set; } = 0;
-            public decimal Profit
+            public DateTime BuyDate { get; init; }
+            internal decimal QuantityOwned { get; init; } = 0;
+            internal decimal BuyPrice { get; init; } = 0;
+            internal decimal? ChangePercent { get; init; } = 0;
+            internal decimal? CurrentPrice { get; init; } = 0;
+            internal decimal Profit
             {
                 get
                 {
@@ -89,7 +90,7 @@ namespace Objects.Stocks
                     }
                 }
             }
-            public PositionInformation(decimal quantityOwned, decimal buyPrice, decimal? changePercent, decimal? currentPrice)
+            internal PositionInformation(decimal quantityOwned, decimal buyPrice, decimal? changePercent, decimal? currentPrice)
             {
                 QuantityOwned = quantityOwned;
                 BuyPrice = buyPrice;

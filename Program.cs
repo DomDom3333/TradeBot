@@ -12,7 +12,7 @@ namespace TradeBot
 {
     internal static class Program
     {
-        public static Strategies.MainStrategy Strats { get; set; } = new MainStrategy();
+        public static Strategies.BaseStrategy CurrentStrategy { get; set; } = new CustomDom();
         public static Timers TimeKeeper { get; set; }
         public static async Task Main()
         {
@@ -46,7 +46,7 @@ namespace TradeBot
                     if (stock.ProcessingLock)
                         return;
                     stock.ProcessingLock = true;
-                    Strats.RunStrategy(quote, stock);
+                    CurrentStrategy.RunQuoteStrategy(quote,stock);
                     stock.ProcessingLock = false;
                 };
             }
