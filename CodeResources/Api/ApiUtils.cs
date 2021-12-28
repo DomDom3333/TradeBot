@@ -1,25 +1,23 @@
 using Alpaca.Markets;
-using CodeResources;
+using CodeResources.Api;
 using Objects.Stocks;
-using TradeBot;
-using TradeBot.CodeResources;
 using TradeBot.Objects;
 
-namespace CodeResources.Api
+namespace TradeBot.CodeResources.Api
 {
     internal static class ApiUtils
     {
 
-        private static AuthStatus scStatus { get; set; }
-        private static AuthStatus dscStatus { get; set; }
-        private static AuthStatus cscStatus { get; set; }
+        private static AuthStatus ScStatus { get; set; }
+        private static AuthStatus DscStatus { get; set; }
+        private static AuthStatus CscStatus { get; set; }
         internal static void InitApi()
         {
             //LoadKeys();
             LogIn();
             if (!TestConnection())
             {
-                throw new Exception("Faled connection test!");
+                throw new Exception("Failed connection test!");
             }
         }
 
@@ -35,7 +33,7 @@ namespace CodeResources.Api
                 return false;
             }
 
-            if (scStatus != AuthStatus.Authorized || dscStatus != AuthStatus.Authorized || cscStatus != AuthStatus.Authorized)
+            if (ScStatus != AuthStatus.Authorized || DscStatus != AuthStatus.Authorized || CscStatus != AuthStatus.Authorized)
             {
                 Console.WriteLine("A streaming client failed to Authenticate!");
                 return false;
@@ -70,28 +68,31 @@ namespace CodeResources.Api
 
             }
 
-            scStatus = ApiRecords.StreamingClient.ConnectAndAuthenticateAsync().Result;
-            dscStatus = ApiRecords.DataStreamingClinet.ConnectAndAuthenticateAsync().Result;
-            cscStatus = ApiRecords.CryptoStreamingClient.ConnectAndAuthenticateAsync().Result;
+            ScStatus = ApiRecords.StreamingClient.ConnectAndAuthenticateAsync().Result;
+            DscStatus = ApiRecords.DataStreamingClinet.ConnectAndAuthenticateAsync().Result;
+            CscStatus = ApiRecords.CryptoStreamingClient.ConnectAndAuthenticateAsync().Result;
 
             WorkingData.AddAccount(ApiRecords.TradingClient.GetAccountAsync().Result);
         }
         
-        internal static void RefreshHistory()
+        internal static async void RefreshHistory()
         {
             Console.WriteLine("Refreshing History of all Stocks");
-            
-            foreach (Stock stock in WorkingData.StockList)
+
+            await Parallel.ForEachAsync(WorkingData.StockList, (stock, _) =>
             {
+                if (stock.ProcessingLock)
+                    return default;
+
                 RefreshHistory(stock);
-            }
+                return default;
+            });
         }
 
         internal static void RefreshHistory(Stock stock)
         {
-            Console.WriteLine($"Refreshing {stock.Name} History.");
-            IReadOnlyDictionary<string, IReadOnlyList<IBar>> bars = new Dictionary<string, IReadOnlyList<IBar>>();
-            IReadOnlyDictionary<string, IReadOnlyList<IQuote>> prices = new Dictionary<string, IReadOnlyList<IQuote>>();
+            IReadOnlyDictionary<string, IReadOnlyList<IBar>> bars;
+            IReadOnlyDictionary<string, IReadOnlyList<IQuote>> prices;
             
             switch (stock.SType)
             {
@@ -118,19 +119,21 @@ namespace CodeResources.Api
             stock.UpdateHostoricalData(bars[stock.Symbol], prices[stock.Symbol]);
         }
 
-        internal static Stock.PositionInformation GetlatestPosition(Stock stock)
+        internal static Stock.PositionInformation GetLatestPosition(Stock stock)
         {
-            IPosition position = null;
+            IPosition position;
+            bool foundPos;
             try
             {
                 position = ApiRecords.TradingClient.GetPositionAsync(stock.Symbol).Result;
+                foundPos = true;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return null;
             }
 
-            if (position != null)
+            if (foundPos)
             {
                 return new Stock.PositionInformation(position.Quantity, position.AverageEntryPrice,
                     position.AssetChangePercent, position.AssetCurrentPrice);

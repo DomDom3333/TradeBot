@@ -2,6 +2,7 @@ using System.Security.Cryptography.X509Certificates;
 using Alpaca.Markets;
 using CodeResources.Api;
 using TradeBot.CodeResources;
+using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
 
 namespace Objects.Stocks
@@ -141,7 +142,7 @@ namespace Objects.Stocks
             Console.WriteLine($"Purchasing ${quantity} of {this.Name}.");
             var openingOrder = ApiRecords.TradingClient
                 .PostOrderAsync(MarketOrder.Buy(this.Symbol,OrderQuantity.Notional(quantity)).WithDuration(TimeInForce.Fok)).Result;
-            this.Position = ApiUtils.GetlatestPosition(this);
+            this.Position = ApiUtils.GetLatestPosition(this);
             WorkingData.CurrentlyHolding++;
             ApiUtils.RefreshHistory(this);
         }

@@ -13,5 +13,6 @@ public static class Appsettings
         internal static string ApiSecret { get; set; }
         internal static int Aggression { get; set; } = 3;
         internal static int MaximumHoldings { get; set; } = 5;
+        public static string[] MonitoringList { get; set; }
     }
 }

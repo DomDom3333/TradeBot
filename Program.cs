@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.VisualBasic.FileIO;
 using Objects.Stocks;
 using TradeBot.CodeResources;
+using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
 using TradeBot.Strategies;
 
@@ -33,14 +34,19 @@ namespace TradeBot
         private static void ResubToItems()
         {
             GetStocks();
-            ApiUtils.RefreshHistory();
+            Task.Run(ApiUtils.RefreshHistory);
+            //ApiUtils.RefreshHistory();
             Console.WriteLine("______________________________________________________________________");
             foreach (Stock stock in WorkingData.StockList)
             {
                 ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
                 stock.TradeSub.Received += (trade) =>
                 {
-                    //Strats.RunStrategy(trade);
+                    if (stock.ProcessingLock)
+                        return;
+                    stock.ProcessingLock = true;
+                    CurrentStrategy.RunTradeStrategy(trade, stock);
+                    stock.ProcessingLock = false;
                 };
                 ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.QuoteSub);
                 stock.QuoteSub.Received += (quote) =>
@@ -56,9 +62,13 @@ namespace TradeBot
 
         private static void GetStocks()
         {
-            //IReadOnlyList<IAsset> test = ApiRecords.TradingClient.ListAssetsAsync(new AssetsRequest()).Result;
+            if (Appsettings.Main.MonitoringList == null || Appsettings.Main.MonitoringList.Length < 1)
+            {
+                LoadAllStocks();
+                return;
+            }
 
-            foreach (string stock in ApiRecords.SubbedItems)
+            foreach (string stock in Appsettings.Main.MonitoringList)
             {
                 IAsset asset = null;
                 IPosition position = null;
@@ -95,6 +105,37 @@ namespace TradeBot
             }
         }
 
+        private static void LoadAllStocks()
+        {
+            List<IAsset> assetList = new List<IAsset>();
+            foreach (string item in ApiRecords.SubbedItems)
+            {
+                assetList.Add(ApiRecords.TradingClient.GetAssetAsync(item).Result);
+            }
+            assetList.AddRange(ApiRecords.TradingClient.ListAssetsAsync(new AssetsRequest()).Result.Where(x =>
+                x.IsTradable && x.Status == AssetStatus.Active && x.Exchange != Exchange.Unknown && x.Symbol.All(c => char.IsLetter(c)))
+                .ToList());
+
+            ParallelOptions po = new ParallelOptions();
+            po.MaxDegreeOfParallelism = 100;
+            
+
+            Parallel.ForEach(assetList, po, asset =>
+            {
+                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange);
+                
+                Console.WriteLine($"Added Stock {asset.Name}.");
+                WorkingData.StockList.Add(newStock);
+            });
+
+            var positionSearch = Parallel.ForEachAsync(WorkingData.StockList, po, (stock, token) =>
+            {
+                stock.Position = ApiUtils.GetLatestPosition(stock);
+                return default;
+            });
+
+        }
+
         private static void ReadAppsettings()
         {
             string appsettingsName = "appsettings.";
@@ -127,6 +168,7 @@ namespace TradeBot
             Appsettings.Main.ApiSecret = secMain.GetValue<string>("ApiSecret");
             Appsettings.Main.Aggression = secMain.GetValue<int>("Aggression");
             Appsettings.Main.MaximumHoldings = secMain.GetValue<int>("MaximumHoldings");
+            Appsettings.Main.MonitoringList = secMain.GetValue<string[]>("MonitoringList");
         }
         
     }

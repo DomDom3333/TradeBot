@@ -2,6 +2,7 @@ using Alpaca.Markets;
 using CodeResources.Api;
 using Objects.Stocks;
 using TradeBot.CodeResources;
+using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
 
 namespace TradeBot.Strategies;
@@ -19,7 +20,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
     }
     public override void RunTradeStrategy(ITrade trade, Stock stock)
     {
-        Console.WriteLine($"A Trade with {trade.Symbol} was made. {trade.Size} were {trade.TakerSide}");
+        //Console.WriteLine($"A Trade with {trade.Symbol} was made. {trade.Size} were {trade.TakerSide}");
 
         //Things to do when trade comes in:
         //Check if Historic data is avaliable
@@ -80,7 +81,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
 
     internal void PositionResponse(Stock stock)
     {
-        stock.Position = ApiUtils.GetlatestPosition(stock);
+        stock.Position = ApiUtils.GetLatestPosition(stock);
 
         if (stock.Position == null)
         {
