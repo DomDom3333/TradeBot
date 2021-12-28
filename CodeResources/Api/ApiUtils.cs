@@ -79,7 +79,11 @@ namespace TradeBot.CodeResources.Api
         {
             Console.WriteLine("Refreshing History of all Stocks");
 
-            await Parallel.ForEachAsync(WorkingData.StockList, (stock, _) =>
+            CancellationTokenSource source = new CancellationTokenSource(60000 * 10);
+            ParallelOptions po = new ParallelOptions();
+            po.MaxDegreeOfParallelism = ThreadPool.ThreadCount / 2;
+            
+            await Parallel.ForEachAsync(WorkingData.StockList, po, (stock, source) =>
             {
                 if (stock.ProcessingLock)
                     return default;

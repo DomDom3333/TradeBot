@@ -69,7 +69,16 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
             Console.WriteLine($"Latest Bar from {stock.Name} did not load correctly! NOT ACTING TO PREVENT ERRORS!!");
             return;
         }
-        if (latestBar.BidPrice < stock.AverageBuy + stock.AgressionBuyOffset)
+
+        if (!stock.LastHourPositiveTrend)
+            return;
+        if (WorkingData.CurrentlyHolding >= Appsettings.Main.MaximumHoldings)
+            return;
+        decimal target = stock.AverageBuy + stock.AgressionBuyOffset;
+        if (target == 0)
+            return;
+        
+        if (latestBar.AskPrice < target)
         {
             stock.BuyStock(PurchaseQuantity());
         }

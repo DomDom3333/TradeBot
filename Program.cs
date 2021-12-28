@@ -39,7 +39,14 @@ namespace TradeBot
             Console.WriteLine("______________________________________________________________________");
             foreach (Stock stock in WorkingData.StockList)
             {
-                ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
+                if (stock.SType == AssetClass.Crypto)
+                {
+                    ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
+                }
+                else if (stock.SType == AssetClass.UsEquity)
+                {
+                    ApiRecords.DataStreamingClinet.SubscribeAsync(stock.TradeSub);
+                }
                 stock.TradeSub.Received += (trade) =>
                 {
                     if (stock.ProcessingLock)
@@ -48,7 +55,14 @@ namespace TradeBot
                     CurrentStrategy.RunTradeStrategy(trade, stock);
                     stock.ProcessingLock = false;
                 };
-                ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.QuoteSub);
+                if (stock.SType == AssetClass.Crypto)
+                {
+                    ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.QuoteSub);
+                }
+                else if (stock.SType == AssetClass.UsEquity)
+                {
+                    ApiRecords.DataStreamingClinet.SubscribeAsync(stock.QuoteSub);
+                }
                 stock.QuoteSub.Received += (quote) =>
                 {
                     if (stock.ProcessingLock)
@@ -118,7 +132,6 @@ namespace TradeBot
 
             ParallelOptions po = new ParallelOptions();
             po.MaxDegreeOfParallelism = 100;
-            
 
             Parallel.ForEach(assetList, po, asset =>
             {
@@ -168,7 +181,7 @@ namespace TradeBot
             Appsettings.Main.ApiSecret = secMain.GetValue<string>("ApiSecret");
             Appsettings.Main.Aggression = secMain.GetValue<int>("Aggression");
             Appsettings.Main.MaximumHoldings = secMain.GetValue<int>("MaximumHoldings");
-            Appsettings.Main.MonitoringList = secMain.GetValue<string[]>("MonitoringList");
+            Appsettings.Main.MonitoringList = secMain.GetValue<string>("MonitoringList").Split(',');
         }
         
     }

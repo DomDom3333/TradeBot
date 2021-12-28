@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Security.Cryptography.X509Certificates;
 using Alpaca.Markets;
 using CodeResources.Api;
@@ -73,7 +74,14 @@ namespace Objects.Stocks
             {
                 if (_TradeSub == null)
                 {
-                    _TradeSub = ApiRecords.CryptoStreamingClient.GetTradeSubscription(Symbol);
+                    if (SType == AssetClass.Crypto)
+                    {
+                        _TradeSub = ApiRecords.CryptoStreamingClient.GetTradeSubscription(Symbol);
+                    }
+                    else if (SType == AssetClass.UsEquity)
+                    {
+                        _TradeSub = ApiRecords.DataStreamingClinet.GetTradeSubscription(Symbol);
+                    }
                 }
 
                 return _TradeSub;
@@ -87,7 +95,14 @@ namespace Objects.Stocks
             {
                 if (_QuoteSub == null)
                 {
-                    _QuoteSub = ApiRecords.CryptoStreamingClient.GetQuoteSubscription(Symbol);
+                    if (SType == AssetClass.Crypto)
+                    {
+                        _QuoteSub = ApiRecords.CryptoStreamingClient.GetQuoteSubscription(Symbol);
+                    }
+                    else if (SType == AssetClass.UsEquity)
+                    {
+                        _QuoteSub = ApiRecords.DataStreamingClinet.GetQuoteSubscription(Symbol);
+                    }
                 }
 
                 return _QuoteSub;
@@ -100,13 +115,14 @@ namespace Objects.Stocks
             HouerlyPriceData = quoteHostory;
             Analytics.GetAverageBuySell(this);
         }
-        internal IReadOnlyList<IBar> HourlyBarData { get; private set; }
-        internal IReadOnlyList<IQuote> HouerlyPriceData { get; private set; }
+        internal IReadOnlyList<IBar> HourlyBarData { get; private set; } = new Collection<IBar>();
+        internal IReadOnlyList<IQuote> HouerlyPriceData { get; private set; } = new Collection<IQuote>();
         
         internal decimal AgressionSellOffset
         {
             get
             {
+                return 0;
                 return (((Appsettings.Main.Aggression * 6) - 30)/100) * AverageSell;
             }
         }
@@ -115,6 +131,7 @@ namespace Objects.Stocks
         {
             get
             {
+                return 0;
                 return (((10 - Appsettings.Main.Aggression * 4) - 40)/100) * AverageSell;
             }
         }
@@ -123,6 +140,10 @@ namespace Objects.Stocks
         {
             get
             {
+                if (HouerlyPriceData.Count < 1)
+                {
+                    return false;
+                }
                 List<IQuote> last = HouerlyPriceData.TakeLast(2).ToList();
                 return (last[0].AskPrice < last[1].AskPrice);
             }
@@ -133,7 +154,6 @@ namespace Objects.Stocks
             var closingOrder = ApiRecords.TradingClient.DeletePositionAsync(new DeletePositionRequest(this.Symbol)).Result;
             Console.WriteLine($"Selling all of {this.Name}. Profit: ${this.Position.ChangePrice}");
             this.Position = null;
-            WorkingData.CurrentlyHolding--;
             ApiUtils.RefreshHistory(this);
         }
 
@@ -141,9 +161,8 @@ namespace Objects.Stocks
         {
             Console.WriteLine($"Purchasing ${quantity} of {this.Name}.");
             var openingOrder = ApiRecords.TradingClient
-                .PostOrderAsync(MarketOrder.Buy(this.Symbol,OrderQuantity.Notional(quantity)).WithDuration(TimeInForce.Fok)).Result;
+                .PostOrderAsync(MarketOrder.Buy(this.Symbol,OrderQuantity.Notional(quantity)).WithDuration(TimeInForce.Day)).Result;
             this.Position = ApiUtils.GetLatestPosition(this);
-            WorkingData.CurrentlyHolding++;
             ApiUtils.RefreshHistory(this);
         }
 

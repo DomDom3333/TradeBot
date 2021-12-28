@@ -9,7 +9,14 @@ internal static class WorkingData
 {
     internal static IAccount Account { get; private set; }
     internal static List<Stock> StockList { get; } = new List<Stock>();
-    internal static int CurrentlyHolding { get; set; }
+
+    internal static int CurrentlyHolding
+    {
+        get
+        {
+            return WorkingData.StockList.Select(x => x.HasPosition).Count();
+        }
+    }
     
     internal static void AddAccount(IAccount acc)
     {
