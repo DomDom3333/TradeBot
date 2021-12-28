@@ -1,6 +1,7 @@
 using Alpaca.Markets;
 using CodeResources.Api;
 using Objects.Stocks;
+using TradeBot.CodeResources;
 
 namespace TradeBot.Objects;
 
@@ -8,7 +9,8 @@ internal static class WorkingData
 {
     internal static IAccount Account { get; private set; }
     internal static List<Stock> StockList { get; } = new List<Stock>();
-
+    internal static int CurrentlyHolding { get; set; }
+    
     internal static void AddAccount(IAccount acc)
     {
         if (Account != null)
@@ -20,4 +22,5 @@ internal static class WorkingData
             Account = acc;
         }
     }
+    
 }

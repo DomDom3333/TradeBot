@@ -12,7 +12,7 @@ public static class Analytics
         int numRows = 0;
 
 
-        foreach (IQuote quote in stock.MinutelyPriceData)
+        foreach (IQuote quote in stock.HouerlyPriceData)
         {
             totalBuy += quote.BidPrice;
             totalSell += quote.AskPrice;
@@ -28,7 +28,7 @@ public static class Analytics
         decimal totalSell = 0;
         int numRows = 0;
         
-        foreach (IQuote quote in stock.MinutelyPriceData)
+        foreach (IQuote quote in stock.HouerlyPriceData)
         {
             totalBuy += quote.BidPrice;
             totalSell += quote.AskPrice;

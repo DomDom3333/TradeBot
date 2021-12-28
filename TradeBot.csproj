@@ -7,6 +7,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Alpaca.Markets" Version="5.2.6" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />

@@ -11,5 +11,7 @@ public static class Appsettings
         internal static string HistoricDatapathStocks { get; set; }
         internal static string ApiId { get; set; }
         internal static string ApiSecret { get; set; }
+        internal static int Aggression { get; set; } = 3;
+        internal static int MaximumHoldings { get; set; } = 5;
     }
 }

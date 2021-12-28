@@ -23,7 +23,8 @@ namespace TradeBot
             ApiUtils.InitApi();
 
             TimeKeeper = new Timers();
-            TimeKeeper.AddSub(TimeKeeper.MinutelySynced, ApiUtils.RefreshHistory);
+
+            TimeKeeper.AddSub(TimeKeeper.HourlySynced, ApiUtils.RefreshHistory);
             ResubToItems();
 
             Console.Read();
@@ -33,6 +34,7 @@ namespace TradeBot
         {
             GetStocks();
             ApiUtils.RefreshHistory();
+            Console.WriteLine("______________________________________________________________________");
             foreach (Stock stock in WorkingData.StockList)
             {
                 ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
@@ -63,18 +65,27 @@ namespace TradeBot
                 try
                 {
                     asset = ApiRecords.TradingClient.GetAssetAsync(stock).Result;
-                    position = ApiRecords.TradingClient.GetPositionAsync(asset.Symbol).Result;
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Could not find Symbol {stock}");
                     continue;
                 }
+                
+                try
+                {
+                    position = ApiRecords.TradingClient.GetPositionAsync(asset.Symbol).Result;
+                    Console.WriteLine($"Found position for Symbol {stock}");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"No position found for Symbol {stock}");
+                }
 
                 if (asset == null)
                     continue;
                 
-                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class);
+                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange);
                 if (position != null)
                 {
                     newStock.Position = new Stock.PositionInformation(position.Quantity, position.AverageEntryPrice, position.AssetChangePercent, position.AssetCurrentPrice);
@@ -95,6 +106,10 @@ namespace TradeBot
             {
                 appsettingsName += ("development.json");
             }
+            else
+            {
+                appsettingsName += ("development.json");
+            }
 
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -110,6 +125,8 @@ namespace TradeBot
             Appsettings.Main.HistoricDatapathStocks = secMain.GetValue<string>("HistoricDataPathStocks");
             Appsettings.Main.ApiId = secMain.GetValue<string>("ApiId");
             Appsettings.Main.ApiSecret = secMain.GetValue<string>("ApiSecret");
+            Appsettings.Main.Aggression = secMain.GetValue<int>("Aggression");
+            Appsettings.Main.MaximumHoldings = secMain.GetValue<int>("MaximumHoldings");
         }
         
     }

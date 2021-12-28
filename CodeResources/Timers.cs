@@ -5,7 +5,7 @@ namespace AlpacaExample.CodeResources;
 
 internal class Timers
 {
-    internal Timer MinutelySynced { get; private set; }
+    internal Timer MinutelySynced { get; set; }
     internal Timer HourlySynced { get; private set; }
     internal Timer DailySynced { get; private set; }
     internal Timer WeeklySynced { get; private set; }
@@ -16,6 +16,7 @@ internal class Timers
         HourlySynced  = new Timer(60*60*1000);
         DailySynced  = new Timer(60*60*24*1000);
         WeeklySynced  = new Timer(60*60*24*7*1000);
+        StartTimers();
     }
 
     private void StartTimers()
@@ -26,10 +27,11 @@ internal class Timers
         MinutelySynced.Start();
     }
 
-    internal void AddSub(Timer timer, Action methode)
+    internal void AddSub(in Timer timer, Action methode)
     {
-        timer.Elapsed += delegate(object? sender, ElapsedEventArgs args)
+        timer.Elapsed += (s,e) =>
         {
+            Console.WriteLine("1 Min Ellapsed!");
             methode.Invoke();
         };
     }
