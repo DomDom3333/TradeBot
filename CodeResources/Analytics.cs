@@ -1,5 +1,6 @@
 using Alpaca.Markets;
 using Objects.Stocks;
+using TradeBot.Objects.Stocks;
 
 namespace TradeBot.CodeResources;
 

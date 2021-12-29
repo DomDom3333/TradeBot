@@ -1,12 +1,10 @@
 using System.Collections.ObjectModel;
-using System.Security.Cryptography.X509Certificates;
 using Alpaca.Markets;
 using CodeResources.Api;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
-using TradeBot.Objects;
 
-namespace Objects.Stocks
+namespace TradeBot.Objects.Stocks
 {
     internal class Stock
     {
@@ -44,10 +42,8 @@ namespace Objects.Stocks
                 {
                     case AssetClass.UsEquity:
                         return (int) SExchange;
-                        break;
                     case AssetClass.Crypto:
                         return (int) CExchange;
-                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -62,12 +58,12 @@ namespace Objects.Stocks
                 return !(Position == null);
             }
         }
-        internal PositionInformation Position { get; set; }
+        internal PositionInformation? Position { get; set; }
 
         internal decimal AverageBuy { get; set; }
         internal decimal AverageSell { get; set; }
 
-        private IAlpacaDataSubscription<ITrade> _TradeSub;
+        private IAlpacaDataSubscription<ITrade>? _TradeSub;
         internal IAlpacaDataSubscription<ITrade> TradeSub
         {
             get

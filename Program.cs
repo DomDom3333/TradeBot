@@ -7,6 +7,7 @@ using Objects.Stocks;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
+using TradeBot.Objects.Stocks;
 using TradeBot.Strategies;
 
 namespace TradeBot
@@ -66,6 +67,8 @@ namespace TradeBot
                 stock.QuoteSub.Received += (quote) =>
                 {
                     if (stock.ProcessingLock)
+                        return;
+                    if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
                         return;
                     stock.ProcessingLock = true;
                     CurrentStrategy.RunQuoteStrategy(quote,stock);
@@ -156,11 +159,7 @@ namespace TradeBot
             {
                 appsettingsName += ("production.json");
             }
-            else if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-            {
-                appsettingsName += ("development.json");
-            }
-            else
+            else //if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
             {
                 appsettingsName += ("development.json");
             }

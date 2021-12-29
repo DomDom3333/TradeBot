@@ -4,6 +4,7 @@ using Objects.Stocks;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
+using TradeBot.Objects.Stocks;
 
 namespace TradeBot.Strategies;
 
@@ -71,7 +72,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
         }
 
         if (!stock.LastHourPositiveTrend)
-            return;
+            //return;
         if (WorkingData.CurrentlyHolding >= Appsettings.Main.MaximumHoldings)
             return;
         decimal target = stock.AverageBuy + stock.AgressionBuyOffset;

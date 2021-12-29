@@ -2,6 +2,7 @@ using Alpaca.Markets;
 using CodeResources.Api;
 using Objects.Stocks;
 using TradeBot.Objects;
+using TradeBot.Objects.Stocks;
 
 namespace TradeBot.CodeResources.Api
 {
@@ -68,6 +69,7 @@ namespace TradeBot.CodeResources.Api
 
             }
 
+            WorkingData.StockClock = ApiRecords.TradingClient.GetClockAsync().Result;
             ScStatus = ApiRecords.StreamingClient.ConnectAndAuthenticateAsync().Result;
             DscStatus = ApiRecords.DataStreamingClinet.ConnectAndAuthenticateAsync().Result;
             CscStatus = ApiRecords.CryptoStreamingClient.ConnectAndAuthenticateAsync().Result;
@@ -123,7 +125,7 @@ namespace TradeBot.CodeResources.Api
             stock.UpdateHostoricalData(bars[stock.Symbol], prices[stock.Symbol]);
         }
 
-        internal static Stock.PositionInformation GetLatestPosition(Stock stock)
+        internal static Stock.PositionInformation? GetLatestPosition(Stock stock)
         {
             IPosition position;
             bool foundPos;

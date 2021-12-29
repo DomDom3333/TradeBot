@@ -2,6 +2,7 @@ using Alpaca.Markets;
 using CodeResources.Api;
 using Objects.Stocks;
 using TradeBot.CodeResources;
+using TradeBot.Objects.Stocks;
 
 namespace TradeBot.Objects;
 
@@ -9,12 +10,13 @@ internal static class WorkingData
 {
     internal static IAccount Account { get; private set; }
     internal static List<Stock> StockList { get; } = new List<Stock>();
+    internal static IClock StockClock { get; set; }
 
     internal static int CurrentlyHolding
     {
         get
         {
-            return WorkingData.StockList.Select(x => x.HasPosition).Count();
+            return WorkingData.StockList.Where(x => x.HasPosition).Count();
         }
     }
     
