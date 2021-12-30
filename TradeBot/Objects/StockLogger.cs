@@ -108,14 +108,23 @@ internal class StockLogger
         {
             return $"Exchange for {Stock.Symbol} is closed. No Change.{Environment.NewLine}";
         }
-        else if (TimesLogged < 1 && Open == 0)
+        else if (TimesLogged < 1 || Open == 0)
         {
-            return $"There have been no trades since market open on {Stock.Symbol}. No Change.";
+            return $"There have been no new Trades since last Update on {Stock.Symbol}. No Change.{Environment.NewLine}";
         }
         
         StringBuilder.Append(
             $"Result of {Stock.Symbol} over the last {LoggingInterval.Interval / 1000}s after {TimesLogged} checks.{Environment.NewLine}");
         StringBuilder.Append($"High: {High}, Low: {Low}, Trending {Trending}, Last Prices: B={LastBuyCheck} | S={LastSellCheck}. {Environment.NewLine}");
+        if (Stock.HasPosition)
+        {
+            StringBuilder.Append($"Current Position change since purchase: ${Stock.Position.ChangePrice}{Environment.NewLine}");
+            StringBuilder.Append($"Sales Target: {Stock.AverageSell} - Current: {Stock.Position.CurrentPrice}{Environment.NewLine}");
+        }
+        else
+        {
+            StringBuilder.Append($"Buy Target: {Stock.AverageSell} - Current: {Stock.LastQuote.AskPrice}{Environment.NewLine}");
+        }
         StringBuilder.Append($"Response: {Response}.{Environment.NewLine}");
         if (WasBought && Stock.HasPosition)
         {

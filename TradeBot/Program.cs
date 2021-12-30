@@ -37,7 +37,7 @@ namespace TradeBot
             GetStocks();
             Task.Run(ApiUtils.RefreshHistory);
             //ApiUtils.RefreshHistory();
-            Console.WriteLine("______________________________________________________________________");
+            Console.WriteLine("----------------------------------------------------------------------------------------");
             
             foreach (Stock stock in WorkingData.StockList)
             {
@@ -92,6 +92,7 @@ namespace TradeBot
                         {
                             lock (quote)
                             {
+                                stock.LastQuote = quote;
                                 CurrentStrategy.RunQuoteStrategy(quote,stock);
                             }
                         }
@@ -139,11 +140,14 @@ namespace TradeBot
                 Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange, TimeKeeper.MinutelySynced);
                 if (position != null)
                 {
+                    WorkingData.PurchasedSymbols.Add(asset.Symbol);
                     newStock.Position = new Stock.PositionInformation(position.Quantity, position.AverageEntryPrice, position.AssetChangePercent, position.AssetCurrentPrice);
                 }
                 Console.WriteLine($"Added Stock {asset.Name}.");
                 WorkingData.StockList.Add(newStock);
             }
+
+            Console.WriteLine($"Found {WorkingData.PurchasedSymbols.Count} Positions");
         }
 
         private static void LoadAllStocks()

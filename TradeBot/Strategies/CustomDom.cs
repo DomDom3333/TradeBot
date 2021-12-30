@@ -78,7 +78,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
         if (target == 0)
             return;
         
-        if (latestBar.AskPrice < target && !stock.HasPosition)
+        if (stock.LastBuy.AddSeconds(5) < DateTime.Now && !WorkingData.PurchasedSymbols.Contains(stock.Symbol) && latestBar.AskPrice < target && !stock.HasPosition)
         {
             stock.BuyStock(PurchaseQuantity());
         }

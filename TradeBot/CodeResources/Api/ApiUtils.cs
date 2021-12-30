@@ -40,7 +40,7 @@ namespace TradeBot.CodeResources.Api
                 return false;
             }
 
-            Console.WriteLine($"${account.BuyingPower} is available as buying power.");
+            Console.WriteLine($"${account.BuyingPower} is available as buying power.{Environment.NewLine}");
             return true;
         }
 

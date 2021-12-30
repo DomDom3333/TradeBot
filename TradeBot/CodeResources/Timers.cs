@@ -30,7 +30,6 @@ internal class Timers
     {
         timer.Elapsed += (s,e) =>
         {
-            Console.WriteLine("1 Min Ellapsed!");
             methode.Invoke();
         };
     }

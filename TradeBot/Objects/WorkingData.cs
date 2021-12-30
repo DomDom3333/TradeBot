@@ -10,6 +10,7 @@ internal static class WorkingData
 {
     internal static IAccount Account { get; private set; }
     internal static List<Stock> StockList { get; } = new List<Stock>();
+    internal static List<string> PurchasedSymbols { get; set; } = new List<string>();
     internal static IClock StockClock { get; set; }
 
     internal static int CurrentlyHolding

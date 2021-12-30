@@ -28,10 +28,7 @@ namespace TradeBot.Objects.Stocks
             }
             
             Log = new StockLogger(this, loggingInterval);
-            Log.LoggingInterval.Elapsed += (sender, args) =>
-            {
-                ReturnLogEntries();
-            };
+            Program.TimeKeeper.AddSub(loggingInterval, ReturnLogEntries);
         }
         
         internal string Name { get; init; }
@@ -40,7 +37,6 @@ namespace TradeBot.Objects.Stocks
         internal AssetClass SType { get; init; }
         private CryptoExchange CExchange { get; init; }
         private Exchange SExchange { get; init; }
-
         public int Exchange
         {
             get
@@ -68,6 +64,8 @@ namespace TradeBot.Objects.Stocks
         internal PositionInformation? Position { get; set; }
         internal decimal LastSale { get; set; }
         internal decimal LastProfit { get; set; }
+        public IQuote LastQuote { get; set; }
+        public DateTime LastBuy { get; set; } = DateTime.Now;
 
         internal decimal AverageBuy { get; set; }
         internal decimal AverageSell { get; set; }
@@ -156,7 +154,9 @@ namespace TradeBot.Objects.Stocks
 
         internal void ClosePosition()
         {
+            WorkingData.PurchasedSymbols.Remove(Symbol);
             var closingOrder = ApiRecords.TradingClient.DeletePositionAsync(new DeletePositionRequest(this.Symbol)).Result;
+            Console.WriteLine($"{DateTime.Now} - Selling {closingOrder.Quantity} (${LastQuote.BidPrice}) of {Name}!");
             LastSale = closingOrder.AverageFillPrice.Value;
             LastProfit = Position.ChangePrice;
             Log.WasSold = true;
@@ -166,8 +166,11 @@ namespace TradeBot.Objects.Stocks
 
         internal void BuyStock(decimal quantity)
         {
+            LastBuy = DateTime.Now;
+            WorkingData.PurchasedSymbols.Add(Symbol);
             var openingOrder = ApiRecords.TradingClient
                 .PostOrderAsync(MarketOrder.Buy(this.Symbol,OrderQuantity.Notional(quantity)).WithDuration(TimeInForce.Day)).Result;
+            Console.WriteLine($"{DateTime.Now} - Buying {openingOrder.Quantity} (${LastQuote.AskPrice}) of {Name}!");
             this.Position = ApiUtils.GetLatestPosition(this);
             Log.WasBought = true;
             ApiUtils.RefreshHistory(this);
