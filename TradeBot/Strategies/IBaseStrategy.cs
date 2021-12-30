@@ -6,6 +6,8 @@ namespace TradeBot.Strategies;
 
 internal interface IBaseStrategy<T>
 {
+    public bool HasQuoteStrat { get; set; }
+    public bool HasTradeStrat { get; set; }
     /// <summary>
     /// This Gets triggered every time there is a change in the Quote (Buy price, Sell price etc)
     /// </summary>

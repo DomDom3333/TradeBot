@@ -1,7 +1,6 @@
-using System.Timers;
 using Timer = System.Timers.Timer;
 
-namespace AlpacaExample.CodeResources;
+namespace TradeBot.CodeResources;
 
 internal class Timers
 {

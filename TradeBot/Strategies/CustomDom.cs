@@ -10,6 +10,7 @@ namespace TradeBot.Strategies;
 
 internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
 {
+    
     private decimal PurchaseQuantity()
     {
         if (!WorkingData.Account.BuyingPower.HasValue)
@@ -22,16 +23,14 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
     public override void RunTradeStrategy(ITrade trade, Stock stock)
     {
         //Console.WriteLine($"A Trade with {trade.Symbol} was made. {trade.Size} were {trade.TakerSide}");
-
-        //Things to do when trade comes in:
-        //Check if Historic data is avaliable
-        //if not avaliable,load data
-        //run the strategy logic based on historic data
     }
+
+    public override bool HasQuoteStrat { get; set; } = true;
+    public override bool HasTradeStrat { get; set; } = false;
 
     public override void RunQuoteStrategy(IQuote quote, Stock stock)
     {
-        Console.WriteLine($"Processing {stock.Name} change.");
+        stock.Log.UpdateLog(quote);
         if (stock.HasPosition)
         {
             PositionResponse(stock);
@@ -72,20 +71,16 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
         }
 
         if (!stock.LastHourPositiveTrend)
-            //return;
+            return;
         if (WorkingData.CurrentlyHolding >= Appsettings.Main.MaximumHoldings)
             return;
         decimal target = stock.AverageBuy + stock.AgressionBuyOffset;
         if (target == 0)
             return;
         
-        if (latestBar.AskPrice < target)
+        if (latestBar.AskPrice < target && !stock.HasPosition)
         {
             stock.BuyStock(PurchaseQuantity());
-        }
-        else
-        {
-            Console.WriteLine($"{stock.Name} not low enough.");
         }
     }
 

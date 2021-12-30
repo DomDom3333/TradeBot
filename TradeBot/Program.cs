@@ -38,42 +38,66 @@ namespace TradeBot
             Task.Run(ApiUtils.RefreshHistory);
             //ApiUtils.RefreshHistory();
             Console.WriteLine("______________________________________________________________________");
+            
             foreach (Stock stock in WorkingData.StockList)
             {
-                if (stock.SType == AssetClass.Crypto)
+                if (CurrentStrategy.HasTradeStrat)
                 {
-                    ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
+                    stock.TradeSub.Received += (trade) =>
+                    {
+                        if (stock.SType == AssetClass.Crypto)
+                        {
+                            ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
+                        }
+                        else if (stock.SType == AssetClass.UsEquity)
+                        {
+                            ApiRecords.DataStreamingClinet.SubscribeAsync(stock.TradeSub);
+                        }
+                        if (stock.ProcessingLock)
+                            return;
+                        if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
+                            return;
+                        stock.ProcessingLock = true;
+                        lock (stock)
+                        {
+                            lock (trade)
+                            {
+                                CurrentStrategy.RunTradeStrategy(trade, stock);
+                            }
+                        }
+                        stock.ProcessingLock = false;
+                    };
+
                 }
-                else if (stock.SType == AssetClass.UsEquity)
+                
+
+                if (CurrentStrategy.HasQuoteStrat)
                 {
-                    ApiRecords.DataStreamingClinet.SubscribeAsync(stock.TradeSub);
+                    if (stock.SType == AssetClass.Crypto)
+                    {
+                        ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.QuoteSub);
+                    }
+                    else if (stock.SType == AssetClass.UsEquity)
+                    {
+                        ApiRecords.DataStreamingClinet.SubscribeAsync(stock.QuoteSub);
+                    }
+                    stock.QuoteSub.Received += (quote) =>
+                    {
+                        if (stock.ProcessingLock)
+                            return;
+                        if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
+                            return;
+                        stock.ProcessingLock = true;
+                        lock (stock)
+                        {
+                            lock (quote)
+                            {
+                                CurrentStrategy.RunQuoteStrategy(quote,stock);
+                            }
+                        }
+                        stock.ProcessingLock = false;
+                    };
                 }
-                stock.TradeSub.Received += (trade) =>
-                {
-                    if (stock.ProcessingLock)
-                        return;
-                    stock.ProcessingLock = true;
-                    CurrentStrategy.RunTradeStrategy(trade, stock);
-                    stock.ProcessingLock = false;
-                };
-                if (stock.SType == AssetClass.Crypto)
-                {
-                    ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.QuoteSub);
-                }
-                else if (stock.SType == AssetClass.UsEquity)
-                {
-                    ApiRecords.DataStreamingClinet.SubscribeAsync(stock.QuoteSub);
-                }
-                stock.QuoteSub.Received += (quote) =>
-                {
-                    if (stock.ProcessingLock)
-                        return;
-                    if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
-                        return;
-                    stock.ProcessingLock = true;
-                    CurrentStrategy.RunQuoteStrategy(quote,stock);
-                    stock.ProcessingLock = false;
-                };
             }
         }
 
@@ -112,7 +136,7 @@ namespace TradeBot
                 if (asset == null)
                     continue;
                 
-                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange);
+                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange, TimeKeeper.MinutelySynced);
                 if (position != null)
                 {
                     newStock.Position = new Stock.PositionInformation(position.Quantity, position.AverageEntryPrice, position.AssetChangePercent, position.AssetCurrentPrice);
@@ -138,7 +162,7 @@ namespace TradeBot
 
             Parallel.ForEach(assetList, po, asset =>
             {
-                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange);
+                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange, TimeKeeper.MinutelySynced);
                 
                 Console.WriteLine($"Added Stock {asset.Name}.");
                 WorkingData.StockList.Add(newStock);

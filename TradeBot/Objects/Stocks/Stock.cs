@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Alpaca.Markets;
+using AlpacaExample.CodeResources;
 using CodeResources.Api;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
@@ -8,7 +9,7 @@ namespace TradeBot.Objects.Stocks
 {
     internal class Stock
     {
-        internal Stock(string name, string symbolName, Guid code, AssetClass type, int exchange)
+        internal Stock(string name, string symbolName, Guid code, AssetClass type, int exchange, System.Timers.Timer loggingInterval)
         {
             Name = name;
             Symbol = symbolName;
@@ -25,6 +26,12 @@ namespace TradeBot.Objects.Stocks
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type), type, null);
             }
+            
+            Log = new StockLogger(this, loggingInterval);
+            Log.LoggingInterval.Elapsed += (sender, args) =>
+            {
+                ReturnLogEntries();
+            };
         }
         
         internal string Name { get; init; }
@@ -59,6 +66,8 @@ namespace TradeBot.Objects.Stocks
             }
         }
         internal PositionInformation? Position { get; set; }
+        internal decimal LastSale { get; set; }
+        internal decimal LastProfit { get; set; }
 
         internal decimal AverageBuy { get; set; }
         internal decimal AverageSell { get; set; }
@@ -148,18 +157,28 @@ namespace TradeBot.Objects.Stocks
         internal void ClosePosition()
         {
             var closingOrder = ApiRecords.TradingClient.DeletePositionAsync(new DeletePositionRequest(this.Symbol)).Result;
-            Console.WriteLine($"Selling all of {this.Name}. Profit: ${this.Position.ChangePrice}");
+            LastSale = closingOrder.AverageFillPrice.Value;
+            LastProfit = Position.ChangePrice;
+            Log.WasSold = true;
             this.Position = null;
             ApiUtils.RefreshHistory(this);
         }
 
         internal void BuyStock(decimal quantity)
         {
-            Console.WriteLine($"Purchasing ${quantity} of {this.Name}.");
             var openingOrder = ApiRecords.TradingClient
                 .PostOrderAsync(MarketOrder.Buy(this.Symbol,OrderQuantity.Notional(quantity)).WithDuration(TimeInForce.Day)).Result;
             this.Position = ApiUtils.GetLatestPosition(this);
+            Log.WasBought = true;
             ApiUtils.RefreshHistory(this);
+        }
+
+        public StockLogger Log { get; set; }
+
+        internal void ReturnLogEntries()
+        {
+            Console.WriteLine(Log.ReturnLog());
+            Log.ResetLog();
         }
 
         internal class PositionInformation
