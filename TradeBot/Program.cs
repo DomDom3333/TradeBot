@@ -19,12 +19,13 @@ namespace TradeBot
         public static async Task Main()
         {
             ReadAppsettings();
+            TimeKeeper = new Timers();
             //CodeResources.HistoricalData.HistoricalData.ReadAllHistoricalData();
 
             // First, open the API connection
             ApiUtils.InitApi();
 
-            TimeKeeper = new Timers();
+
 
             TimeKeeper.AddSub(TimeKeeper.HourlySynced, ApiUtils.RefreshHistory);
             ResubToItems();

@@ -70,6 +70,10 @@ namespace TradeBot.CodeResources.Api
             }
 
             WorkingData.StockClock = ApiRecords.TradingClient.GetClockAsync().Result;
+            Program.TimeKeeper.AddSub(Program.TimeKeeper.MinutelySynced, () =>
+            {
+                WorkingData.StockClock = ApiRecords.TradingClient.GetClockAsync().Result;
+            });
             ScStatus = ApiRecords.StreamingClient.ConnectAndAuthenticateAsync().Result;
             DscStatus = ApiRecords.DataStreamingClinet.ConnectAndAuthenticateAsync().Result;
             CscStatus = ApiRecords.CryptoStreamingClient.ConnectAndAuthenticateAsync().Result;
