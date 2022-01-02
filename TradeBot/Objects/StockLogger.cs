@@ -1,5 +1,6 @@
 using System.Text;
 using Alpaca.Markets;
+using TradeBot.CodeResources;
 
 namespace TradeBot.Objects;
 
@@ -112,7 +113,7 @@ internal class StockLogger
         {
             return $"There have been no new Trades since last Update on {Stock.Symbol}. No Change.{Environment.NewLine}";
         }
-        
+
         StringBuilder.Append(
             $"Result of {Stock.Symbol} over the last {LoggingInterval.Interval / 1000}s after {TimesLogged} checks.{Environment.NewLine}");
         StringBuilder.Append($"High: {High}, Low: {Low}, Trending {Trending}, Last Prices: B={LastBuyCheck} | S={LastSellCheck}. {Environment.NewLine}");

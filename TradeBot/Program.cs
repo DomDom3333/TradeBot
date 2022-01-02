@@ -1,9 +1,5 @@
 ﻿using Alpaca.Markets;
-using AlpacaExample.CodeResources;
-using CodeResources.Api;
 using Microsoft.Extensions.Configuration;
-using Microsoft.VisualBasic.FileIO;
-using Objects.Stocks;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
@@ -16,7 +12,7 @@ namespace TradeBot
     {
         public static Strategies.BaseStrategy CurrentStrategy { get; set; } = new CustomDom();
         public static Timers TimeKeeper { get; set; }
-        public static async Task Main()
+        public static void Main()
         {
             ReadAppsettings();
             TimeKeeper = new Timers();

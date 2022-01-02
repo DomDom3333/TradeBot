@@ -1,10 +1,7 @@
 using Alpaca.Markets;
-using CodeResources.Api;
-using Objects.Stocks;
-using TradeBot.CodeResources;
 using TradeBot.Objects.Stocks;
 
-namespace TradeBot.Objects;
+namespace TradeBot.CodeResources;
 
 internal static class WorkingData
 {
@@ -17,7 +14,7 @@ internal static class WorkingData
     {
         get
         {
-            return WorkingData.StockList.Where(x => x.HasPosition).Count();
+            return StockList.Where(x => x.HasPosition).Count();
         }
     }
     

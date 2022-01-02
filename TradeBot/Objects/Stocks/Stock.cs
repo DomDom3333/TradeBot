@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
 using Alpaca.Markets;
-using AlpacaExample.CodeResources;
-using CodeResources.Api;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
 

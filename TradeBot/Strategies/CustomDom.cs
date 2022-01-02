@@ -1,6 +1,4 @@
 using Alpaca.Markets;
-using CodeResources.Api;
-using Objects.Stocks;
 using TradeBot.CodeResources;
 using TradeBot.CodeResources.Api;
 using TradeBot.Objects;
@@ -61,7 +59,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
             }
             
         }
-        catch (Exception e)
+        catch (Exception)
         {
         }
         if (latestBar == null)

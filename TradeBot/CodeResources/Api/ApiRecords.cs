@@ -1,6 +1,6 @@
 using Alpaca.Markets;
 
-namespace CodeResources.Api
+namespace TradeBot.CodeResources.Api
 {
     static class ApiRecords
     {
