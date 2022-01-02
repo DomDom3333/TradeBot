@@ -44,9 +44,9 @@ namespace TradeBot.CodeResources.Api
 
         private static void LogIn()
         {
-            SecretKey secretKey = new SecretKey(Appsettings.Main.ApiId, Appsettings.Main.ApiSecret);
             if (Appsettings.Main.IsLive)
             {
+                SecretKey secretKey = new SecretKey(Appsettings.Main.PaperApiId, Appsettings.Main.PaperApiSecret);
                 Console.WriteLine("Running on LIVE version!");
                 ApiRecords.TradingClient = Environments.Live.GetAlpacaTradingClient(secretKey);
                 ApiRecords.CryptoDataClient = Environments.Live.GetAlpacaCryptoDataClient(secretKey);
@@ -57,6 +57,7 @@ namespace TradeBot.CodeResources.Api
             }
             else
             {
+                SecretKey secretKey = new SecretKey(Appsettings.Main.LiveApiId, Appsettings.Main.LiveApiSecret);
                 Console.WriteLine("Running on PAPER version!");
                 ApiRecords.TradingClient = Environments.Paper.GetAlpacaTradingClient(secretKey);
                 ApiRecords.CryptoDataClient = Environments.Paper.GetAlpacaCryptoDataClient(secretKey);
@@ -99,24 +100,31 @@ namespace TradeBot.CodeResources.Api
 
         internal static void RefreshHistory(Stock stock)
         {
-            IReadOnlyDictionary<string, IReadOnlyList<IBar>> bars;
-            IReadOnlyDictionary<string, IReadOnlyList<IQuote>> prices;
+            IReadOnlyDictionary<string, IReadOnlyList<IBar>> hourBars;
+            IReadOnlyDictionary<string, IReadOnlyList<IQuote>> hourPrices;            
+            IReadOnlyDictionary<string, IReadOnlyList<IBar>> minuteBars;
             
             switch (stock.SType)
             {
                 case AssetClass.UsEquity:
-                    bars = ApiRecords.DataClient
+                    hourBars = ApiRecords.DataClient
                         .GetHistoricalBarsAsync(new HistoricalBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
                             DateTime.Now, BarTimeFrame.Hour)).Result.Items;
-                    prices = ApiRecords.DataClient
+                    minuteBars = ApiRecords.DataClient
+                        .GetHistoricalBarsAsync(new HistoricalBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
+                            DateTime.Now, BarTimeFrame.Minute)).Result.Items;
+                    hourPrices = ApiRecords.DataClient
                         .GetHistoricalQuotesAsync(new HistoricalQuotesRequest(stock.Symbol, DateTime.Now.AddYears(-1),
                             DateTime.Now)).Result.Items;
                     break;
                 case AssetClass.Crypto:
-                    bars = ApiRecords.CryptoDataClient
+                    hourBars = ApiRecords.CryptoDataClient
                         .GetHistoricalBarsAsync(new HistoricalCryptoBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
                             DateTime.Now, BarTimeFrame.Hour)).Result.Items;
-                    prices = ApiRecords.CryptoDataClient
+                    minuteBars = ApiRecords.CryptoDataClient
+                        .GetHistoricalBarsAsync(new HistoricalCryptoBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
+                            DateTime.Now, BarTimeFrame.Minute)).Result.Items;
+                    hourPrices = ApiRecords.CryptoDataClient
                         .GetHistoricalQuotesAsync(new HistoricalCryptoQuotesRequest(stock.Symbol, DateTime.Now.AddYears(-1),
                             DateTime.Now)).Result.Items;
                     break;
@@ -124,7 +132,7 @@ namespace TradeBot.CodeResources.Api
                     throw new ArgumentOutOfRangeException();
             }
             Console.WriteLine($"Got History for {stock.Name}");
-            stock.UpdateHostoricalData(bars[stock.Symbol], prices[stock.Symbol]);
+            stock.UpdateHostoricalData(hourBars[stock.Symbol], hourPrices[stock.Symbol], minuteBars[stock.Symbol]);
         }
 
         internal static Stock.PositionInformation? GetLatestPosition(Stock stock)

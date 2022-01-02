@@ -9,6 +9,7 @@ public static class Analytics
     {
         foreach (IBar bar in stock.HourlyBarData)
         {
+            //Does nothing yet.
         }
     }
     internal static void GetAverageBuySell(Stock stock)
@@ -16,14 +17,25 @@ public static class Analytics
         decimal totalBuy = 0;
         decimal totalSell = 0;
         int numRows = 0;
-        
-        foreach (IQuote quote in stock.HouerlyPriceData)
-        {
-            totalBuy += quote.AskPrice;
-            totalSell += quote.BidPrice;
-            numRows ++;
-        }
 
+        if (stock.SType == AssetClass.Crypto)
+        {
+            foreach (IQuote quote in stock.HouerlyPriceData.Take(stock.HouerlyPriceData.Count/2))
+            {
+                totalBuy += quote.AskPrice;
+                totalSell += quote.BidPrice;
+                numRows ++;
+            }
+        }
+        else
+        {
+            foreach (IQuote quote in stock.HouerlyPriceData)
+            {
+                totalBuy += quote.AskPrice;
+                totalSell += quote.BidPrice;
+                numRows ++;
+            }
+        }
         if (numRows < 1)
             return;
         

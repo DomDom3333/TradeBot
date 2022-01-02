@@ -110,12 +110,15 @@ namespace TradeBot.Objects.Stocks
             }
         }
 
-        internal void UpdateHostoricalData(IReadOnlyList<IBar> barHistory, IReadOnlyList<IQuote> quoteHostory)
+        internal void UpdateHostoricalData(IReadOnlyList<IBar> barHistory, IReadOnlyList<IQuote> quoteHistory, IReadOnlyList<IBar> minuteBarHistory)
         {
             HourlyBarData = barHistory;
-            HouerlyPriceData = quoteHostory;
+            MinutelyBarData = minuteBarHistory;
+            HouerlyPriceData = quoteHistory;
             Analytics.GetAverageBuySell(this);
         }
+
+        internal IReadOnlyList<IBar> MinutelyBarData { get; set; } = new Collection<IBar>();
         internal IReadOnlyList<IBar> HourlyBarData { get; private set; } = new Collection<IBar>();
         internal IReadOnlyList<IQuote> HouerlyPriceData { get; private set; } = new Collection<IQuote>();
         

@@ -163,13 +163,23 @@ namespace TradeBot
 
             Parallel.ForEach(assetList, po, asset =>
             {
+                if (asset.Class == AssetClass.UsEquity && !Appsettings.Main.TradeStock)
+                {
+                    Console.WriteLine($"Configured not to trade Stocks in Appsettings. Not adding {asset.Symbol}.");
+                    return;
+                }
+                if (asset.Class == AssetClass.Crypto && !Appsettings.Main.TradeCrypto)
+                {
+                    Console.WriteLine($"Configured not to trade Crypto in Appsettings. Not adding {asset.Symbol}.");
+                    return;
+                }
                 Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange, TimeKeeper.MinutelySynced);
                 
                 Console.WriteLine($"Added Stock {asset.Name}.");
                 WorkingData.StockList.Add(newStock);
             });
 
-            var positionSearch = Parallel.ForEachAsync(WorkingData.StockList, po, (stock, token) =>
+            Parallel.ForEachAsync(WorkingData.StockList, po, (stock, token) =>
             {
                 stock.Position = ApiUtils.GetLatestPosition(stock);
                 return default;
@@ -179,15 +189,7 @@ namespace TradeBot
 
         private static void ReadAppsettings()
         {
-            string appsettingsName = "appsettings.";
-            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Production")
-            {
-                appsettingsName += ("production.json");
-            }
-            else //if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
-            {
-                appsettingsName += ("development.json");
-            }
+            string appsettingsName = "appsettings.json";
 
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
@@ -199,10 +201,10 @@ namespace TradeBot
             Appsettings.Main.IsLive = secMain.GetValue<bool>("IsLive");
             Appsettings.Main.TradeCrypto = secMain.GetValue<bool>("TradeCrypto");
             Appsettings.Main.TradeStock = secMain.GetValue<bool>("TradeStock");
-            Appsettings.Main.HistoricDataPathCrypto = secMain.GetValue<string>("HistoricDataPathCrypto");
-            Appsettings.Main.HistoricDatapathStocks = secMain.GetValue<string>("HistoricDataPathStocks");
-            Appsettings.Main.ApiId = secMain.GetValue<string>("ApiId");
-            Appsettings.Main.ApiSecret = secMain.GetValue<string>("ApiSecret");
+            Appsettings.Main.PaperApiId = secMain.GetValue<string>("PaperApiId");
+            Appsettings.Main.PaperApiSecret = secMain.GetValue<string>("PaperApiSecret");            
+            Appsettings.Main.LiveApiId = secMain.GetValue<string>("LiveApiId");
+            Appsettings.Main.LiveApiSecret = secMain.GetValue<string>("LiveApiSecret");
             Appsettings.Main.Aggression = secMain.GetValue<int>("Aggression");
             Appsettings.Main.MaximumHoldings = secMain.GetValue<int>("MaximumHoldings");
             Appsettings.Main.MonitoringList = secMain.GetValue<string>("MonitoringList").Split(',');
