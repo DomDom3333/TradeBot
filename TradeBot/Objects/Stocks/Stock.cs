@@ -26,7 +26,7 @@ namespace TradeBot.Objects.Stocks
             }
             
             Log = new StockLogger(this, loggingInterval);
-            Program.TimeKeeper.AddSub(loggingInterval, ReturnLogEntries);
+            //Program.TimeKeeper.AddSub(loggingInterval, ReturnLogEntries);
         }
         
         internal string Name { get; init; }
@@ -178,6 +178,7 @@ namespace TradeBot.Objects.Stocks
         }
 
         public StockLogger Log { get; set; }
+        public Guid LogId { get; set; }
 
         internal void ReturnLogEntries()
         {

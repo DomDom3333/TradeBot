@@ -4,13 +4,15 @@ namespace TradeBot.CodeResources;
 
 internal class Timers
 {
-    internal Timer MinutelySynced { get; set; }
+    internal Timer SecondlySynced { get; private set; }
+    internal Timer MinutelySynced { get; private set; }
     internal Timer HourlySynced { get; private set; }
     internal Timer DailySynced { get; private set; }
     internal Timer WeeklySynced { get; private set; }
     
     internal Timers()
     {
+        SecondlySynced  = new Timer(1000);
         MinutelySynced  = new Timer(60*1000);
         HourlySynced  = new Timer(60*60*1000);
         DailySynced  = new Timer(60*60*24*1000);
@@ -24,6 +26,7 @@ internal class Timers
         DailySynced.Start();
         HourlySynced.Start();
         MinutelySynced.Start();
+        SecondlySynced.Start();
     }
 
     internal void AddSub(in Timer timer, Action methode)

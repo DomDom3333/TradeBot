@@ -16,6 +16,7 @@ namespace TradeBot
         {
             ReadAppsettings();
             TimeKeeper = new Timers();
+            WorkingData.Logger = new Logger();
             //CodeResources.HistoricalData.HistoricalData.ReadAllHistoricalData();
 
             // First, open the API connection
@@ -25,6 +26,8 @@ namespace TradeBot
 
             TimeKeeper.AddSub(TimeKeeper.HourlySynced, ApiUtils.RefreshHistory);
             ResubToItems();
+            
+            TimeKeeper.AddSub(TimeKeeper.SecondlySynced,WorkingData.Logger.UpdateConsole);
 
             Console.Read();
         }
@@ -40,16 +43,17 @@ namespace TradeBot
             {
                 if (CurrentStrategy.HasTradeStrat)
                 {
+                    if (stock.SType == AssetClass.Crypto)
+                    {
+                        ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
+                    }
+                    else if (stock.SType == AssetClass.UsEquity)
+                    {
+                        ApiRecords.DataStreamingClinet.SubscribeAsync(stock.TradeSub);
+                    }
                     stock.TradeSub.Received += (trade) =>
                     {
-                        if (stock.SType == AssetClass.Crypto)
-                        {
-                            ApiRecords.CryptoStreamingClient.SubscribeAsync(stock.TradeSub);
-                        }
-                        else if (stock.SType == AssetClass.UsEquity)
-                        {
-                            ApiRecords.DataStreamingClinet.SubscribeAsync(stock.TradeSub);
-                        }
+                        WorkingData.Logger.UpdateLogData(stock);
                         if (stock.ProcessingLock)
                             return;
                         if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
@@ -80,6 +84,8 @@ namespace TradeBot
                     }
                     stock.QuoteSub.Received += (quote) =>
                     {
+                        stock.LastQuote = quote;
+                        WorkingData.Logger.UpdateLogData(stock);
                         if (stock.ProcessingLock)
                             return;
                         if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
@@ -89,7 +95,6 @@ namespace TradeBot
                         {
                             lock (quote)
                             {
-                                stock.LastQuote = quote;
                                 CurrentStrategy.RunQuoteStrategy(quote,stock);
                             }
                         }
@@ -120,7 +125,7 @@ namespace TradeBot
                     Console.WriteLine($"Could not find Symbol {stock}");
                     continue;
                 }
-                
+
                 try
                 {
                     position = ApiRecords.TradingClient.GetPositionAsync(asset.Symbol).Result;
@@ -133,13 +138,22 @@ namespace TradeBot
 
                 if (asset == null)
                     continue;
-                
-                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int)asset.Exchange, TimeKeeper.MinutelySynced);
+
+                Stock newStock = new Stock(asset.Name, asset.Symbol, asset.AssetId, asset.Class, (int) asset.Exchange, TimeKeeper.MinutelySynced);
                 if (position != null)
                 {
                     WorkingData.PurchasedSymbols.Add(asset.Symbol);
                     newStock.Position = new Stock.PositionInformation(position.Quantity, position.AverageEntryPrice, position.AssetChangePercent, position.AssetCurrentPrice);
                 }
+                
+                newStock.LogId = WorkingData.Logger.AddLine();
+                WorkingData.Logger.AddParams(newStock.LogId, new (string, string)[]
+                {
+                    ("@Symbol",newStock.Symbol),
+                    ("@Target",newStock.AverageSell.ToString()),
+                    ("@Current",newStock.LastQuote?.BidPrice.ToString()),
+                    ("@Position",newStock.HasPosition ? newStock.Position.Profit.ToString() : "No"),
+                });
                 Console.WriteLine($"Added Stock {asset.Name}.");
                 WorkingData.StockList.Add(newStock);
             }

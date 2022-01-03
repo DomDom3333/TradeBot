@@ -28,7 +28,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
 
     public override void RunQuoteStrategy(IQuote quote, Stock stock)
     {
-        stock.Log.UpdateLog(quote);
+        //stock.Log.UpdateLog(quote);
         if (stock.HasPosition)
         {
             PositionResponse(stock);

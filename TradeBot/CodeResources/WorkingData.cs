@@ -1,4 +1,5 @@
 using Alpaca.Markets;
+using TradeBot.Objects;
 using TradeBot.Objects.Stocks;
 
 namespace TradeBot.CodeResources;
@@ -17,7 +18,9 @@ internal static class WorkingData
             return StockList.Where(x => x.HasPosition).Count();
         }
     }
-    
+
+    public static Logger Logger { get; set; }
+
     internal static void AddAccount(IAccount acc)
     {
         if (Account != null)

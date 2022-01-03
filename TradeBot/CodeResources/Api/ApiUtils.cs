@@ -96,6 +96,8 @@ namespace TradeBot.CodeResources.Api
                 RefreshHistory(stock);
                 return default;
             });
+            Console.Clear();
+            Console.SetCursorPosition(0,0);
         }
 
         internal static void RefreshHistory(Stock stock)
