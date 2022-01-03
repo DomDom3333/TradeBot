@@ -17,24 +17,20 @@ public static class Analytics
         decimal totalBuy = 0;
         decimal totalSell = 0;
         int numRows = 0;
-
+        List<IQuote> listToAverage = stock.HouerlyPriceData.ToList();
         if (stock.SType == AssetClass.Crypto)
         {
-            foreach (IQuote quote in stock.HouerlyPriceData.Take(stock.HouerlyPriceData.Count/2))
-            {
-                totalBuy += quote.AskPrice;
-                totalSell += quote.BidPrice;
-                numRows ++;
-            }
+            listToAverage = listToAverage.Take(stock.HouerlyPriceData.Count / 2).ToList();
         }
-        else
+        foreach (IQuote quote in listToAverage)
         {
-            foreach (IQuote quote in stock.HouerlyPriceData)
-            {
-                totalBuy += quote.AskPrice;
-                totalSell += quote.BidPrice;
-                numRows ++;
-            }
+            //Filter out invalid datapoints to preserve result integrity
+            if (quote.AskPrice == 0 || quote.BidPrice == 0)
+                continue;
+            
+            totalBuy += quote.AskPrice;
+            totalSell += quote.BidPrice;
+            numRows ++;
         }
         if (numRows < 1)
             return;
