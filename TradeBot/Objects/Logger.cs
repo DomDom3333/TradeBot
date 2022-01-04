@@ -9,7 +9,7 @@ internal class Logger
         new Dictionary<Guid, ConsoleTextContainer>();
     
 
-    internal Guid AddLine(string text = "@Symbol: Target: @Target - Current: @Current - Position: @Position")
+    internal Guid AddLine(string text = "@Symbol: Target: @Target - Current: @Current - Position: @Position - Trend: @Trend")
     {
         ConsoleTextContainer ctc = new ConsoleTextContainer(text);
         Guid lineGuid = Guid.NewGuid();
@@ -33,20 +33,20 @@ internal class Logger
     internal void UpdateLogData(Stock stock)
     {
         ConsoleLines[stock.LogId].EditParameter("@Symbol", stock.Symbol);
-        ConsoleLines[stock.LogId].EditParameter("@Target", stock.AverageSell.ToString());
+        ConsoleLines[stock.LogId].EditParameter("@Target", (Math.Truncate(100 * stock.AverageSell)/100).ToString());
         ConsoleLines[stock.LogId].EditParameter("@Current", stock.LastQuote?.BidPrice.ToString());
-        ConsoleLines[stock.LogId].EditParameter("@Position", stock.HasPosition?stock.Position.Profit.ToString():"No");
+        ConsoleLines[stock.LogId].EditParameter("@Position", (stock.HasPosition ? stock.Position.ChangePrice.ToString() : "No"));
+        ConsoleLines[stock.LogId].EditParameter("@Trend", stock.LastHourPositiveTrend ? "UP" : "DOWN");
     }
 
     internal void UpdateConsole()
     {
+        Console.Clear();
         Console.SetCursorPosition(0,0);
-        Console.SetCursorPosition(0, ConsoleLines.Count-1);
         foreach (var line in ConsoleLines)
         {
             Console.WriteLine(line.Value.FinishedText);
         }
-        Console.SetCursorPosition(0,0);
     }
 
 }
@@ -65,7 +65,6 @@ internal class ConsoleTextContainer
     {
         get
         {
-            
             string outputText = Line.ToString();
             foreach (KeyValuePair<string,string> parameter in Parameters)
             {

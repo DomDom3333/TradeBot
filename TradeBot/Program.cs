@@ -54,19 +54,11 @@ namespace TradeBot
                     stock.TradeSub.Received += (trade) =>
                     {
                         WorkingData.Logger.UpdateLogData(stock);
-                        if (stock.ProcessingLock)
-                            return;
                         if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
                             return;
-                        stock.ProcessingLock = true;
-                        lock (stock)
-                        {
-                            lock (trade)
-                            {
-                                CurrentStrategy.RunTradeStrategy(trade, stock);
-                            }
-                        }
-                        stock.ProcessingLock = false;
+                        if (ApiUtils.GettingHistory)
+                            return;
+                        CurrentStrategy.RunTradeStrategy(trade, stock);
                     };
 
                 }
@@ -86,19 +78,11 @@ namespace TradeBot
                     {
                         stock.LastQuote = quote;
                         WorkingData.Logger.UpdateLogData(stock);
-                        if (stock.ProcessingLock)
-                            return;
                         if (!WorkingData.StockClock.IsOpen && stock.SType == AssetClass.UsEquity)
                             return;
-                        stock.ProcessingLock = true;
-                        lock (stock)
-                        {
-                            lock (quote)
-                            {
-                                CurrentStrategy.RunQuoteStrategy(quote,stock);
-                            }
-                        }
-                        stock.ProcessingLock = false;
+                        if (ApiUtils.GettingHistory)
+                            return;
+                        CurrentStrategy.RunQuoteStrategy(quote,stock);
                     };
                 }
             }
@@ -153,6 +137,7 @@ namespace TradeBot
                     ("@Target",newStock.AverageSell.ToString()),
                     ("@Current",newStock.LastQuote?.BidPrice.ToString()),
                     ("@Position",newStock.HasPosition ? newStock.Position.Profit.ToString() : "No"),
+                    ("@Trend",newStock.LastHourPositiveTrend ? "UP" : "DOWN"),
                 });
                 Console.WriteLine($"Added Stock {asset.Name}.");
                 WorkingData.StockList.Add(newStock);

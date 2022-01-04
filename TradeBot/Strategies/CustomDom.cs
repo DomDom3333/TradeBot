@@ -15,6 +15,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
         {
             return 0;
         }
+        return 10000;
 
         return WorkingData.Account.BuyingPower.Value / (Appsettings.Main.MaximumHoldings - WorkingData.CurrentlyHolding);
     }
@@ -29,6 +30,7 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
     public override void RunQuoteStrategy(IQuote quote, Stock stock)
     {
         //stock.Log.UpdateLog(quote);
+        ApiUtils.GetLatestPosition(stock);
         if (stock.HasPosition)
         {
             PositionResponse(stock);
@@ -91,12 +93,13 @@ internal class CustomDom : BaseStrategy,IBaseStrategy<BaseStrategy>
             Console.WriteLine($"Latest Position from {stock.Name} did not load correctly! NOT ACTING TO PREVENT ERRORS!!");
             return;
         }
-        
+
+        if (stock.Position.CurrentPrice == 0)
+            return;
         if (!stock.Position.Profit)
             return;
         if (stock.Position.CurrentPrice < (stock.AverageSell + stock.AgressionSellOffset))
             return;
-
         if (stock.LastHourPositiveTrend)
             return;
         

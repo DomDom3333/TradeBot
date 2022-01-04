@@ -110,15 +110,14 @@ namespace TradeBot.Objects.Stocks
             }
         }
 
-        internal void UpdateHostoricalData(IReadOnlyList<IBar> barHistory, IReadOnlyList<IQuote> quoteHistory, IReadOnlyList<IBar> minuteBarHistory)
+        internal void UpdateHostoricalData(IReadOnlyList<IBar> barHistory, IReadOnlyList<IQuote> quoteHistory)
         {
             HourlyBarData = barHistory;
-            MinutelyBarData = minuteBarHistory;
             HouerlyPriceData = quoteHistory;
-            Analytics.GetAverageBuySell(this);
+            //Analytics.GetAverageBuySell(this);
+            Analytics.GetBarsSummary(this);
         }
 
-        internal IReadOnlyList<IBar> MinutelyBarData { get; set; } = new Collection<IBar>();
         internal IReadOnlyList<IBar> HourlyBarData { get; private set; } = new Collection<IBar>();
         internal IReadOnlyList<IQuote> HouerlyPriceData { get; private set; } = new Collection<IQuote>();
         
@@ -144,12 +143,12 @@ namespace TradeBot.Objects.Stocks
         {
             get
             {
-                if (HouerlyPriceData.Count < 1)
+                if (HourlyBarData.Count < 1)
                 {
                     return false;
                 }
-                List<IQuote> last = HouerlyPriceData.TakeLast(2).ToList();
-                return (last[0].AskPrice < last[1].AskPrice);
+                IBar last = HourlyBarData.Last();
+                return last.Open < last.Close;
             }
         }
 
@@ -158,7 +157,10 @@ namespace TradeBot.Objects.Stocks
             WorkingData.PurchasedSymbols.Remove(Symbol);
             var closingOrder = ApiRecords.TradingClient.DeletePositionAsync(new DeletePositionRequest(this.Symbol)).Result;
             Console.WriteLine($"{DateTime.Now} - Selling {closingOrder.Quantity} (${LastQuote.BidPrice}) of {Name}!");
-            LastSale = closingOrder.AverageFillPrice.Value;
+            if (closingOrder.AverageFillPrice.HasValue)
+            {
+                LastSale = closingOrder.AverageFillPrice.Value;
+            }
             LastProfit = Position.ChangePrice;
             Log.WasSold = true;
             this.Position = null;

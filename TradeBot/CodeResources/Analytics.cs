@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Alpaca.Markets;
 using TradeBot.Objects.Stocks;
 
@@ -7,10 +8,30 @@ public static class Analytics
 {
     internal static void GetBarsSummary(Stock stock)
     {
-        foreach (IBar bar in stock.HourlyBarData)
+        decimal totalBuy = 0;
+        decimal totalSell = 0;
+        int numRows = 0;
+        
+        List<IBar> listToAverage = stock.HourlyBarData.ToList();
+        if (stock.SType == AssetClass.Crypto)
         {
+            listToAverage = listToAverage.Take(stock.HouerlyPriceData.Count / 2).ToList();
+        }
+        foreach (IBar bar in listToAverage)
+        {
+            //Filter out invalid datapoints to preserve result integrity
+            if (bar.Volume == 0)
+                continue;
+            
+            totalBuy += bar.Vwap;
+            numRows++;
             //Does nothing yet.
         }
+        if (numRows < 1)
+            return;
+        stock.AverageSell = totalBuy / numRows;
+        stock.AverageBuy = totalBuy / numRows;
+
     }
     internal static void GetAverageBuySell(Stock stock)
     {
@@ -35,7 +56,7 @@ public static class Analytics
         if (numRows < 1)
             return;
         
-        stock.AverageSell = totalSell/numRows;
-        stock.AverageBuy = totalBuy/numRows;
+        //stock.AverageSell = totalSell/numRows;
+        //stock.AverageBuy = totalBuy/numRows;
     }
 }

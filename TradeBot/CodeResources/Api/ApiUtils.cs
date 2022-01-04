@@ -6,7 +6,7 @@ namespace TradeBot.CodeResources.Api
 {
     internal static class ApiUtils
     {
-
+        internal static bool GettingHistory { get; set; } = false;
         private static AuthStatus ScStatus { get; set; }
         private static AuthStatus DscStatus { get; set; }
         private static AuthStatus CscStatus { get; set; }
@@ -83,6 +83,7 @@ namespace TradeBot.CodeResources.Api
         internal static async void RefreshHistory()
         {
             Console.WriteLine("Refreshing History of all Stocks");
+            GettingHistory = true;
 
             CancellationTokenSource source = new CancellationTokenSource(60000 * 10);
             ParallelOptions po = new ParallelOptions();
@@ -98,43 +99,56 @@ namespace TradeBot.CodeResources.Api
             });
             Console.Clear();
             Console.SetCursorPosition(0,0);
+            GettingHistory = false;
         }
 
         internal static void RefreshHistory(Stock stock)
         {
+            List<IBar> finalBars = new List<IBar>();
+            List<IQuote> finalQuotes = new List<IQuote>();
             IReadOnlyDictionary<string, IReadOnlyList<IBar>> hourBars;
-            IReadOnlyDictionary<string, IReadOnlyList<IQuote>> hourPrices;            
-            IReadOnlyDictionary<string, IReadOnlyList<IBar>> minuteBars;
-            
-            switch (stock.SType)
+            IReadOnlyDictionary<string, IReadOnlyList<IQuote>> hourPrices;
+            for (int i = 0; i < 16; i++)
             {
-                case AssetClass.UsEquity:
-                    hourBars = ApiRecords.DataClient
-                        .GetHistoricalBarsAsync(new HistoricalBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
-                            DateTime.Now, BarTimeFrame.Hour)).Result.Items;
-                    minuteBars = ApiRecords.DataClient
-                        .GetHistoricalBarsAsync(new HistoricalBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
-                            DateTime.Now, BarTimeFrame.Minute)).Result.Items;
-                    hourPrices = ApiRecords.DataClient
-                        .GetHistoricalQuotesAsync(new HistoricalQuotesRequest(stock.Symbol, DateTime.Now.AddYears(-1),
-                            DateTime.Now)).Result.Items;
-                    break;
-                case AssetClass.Crypto:
-                    hourBars = ApiRecords.CryptoDataClient
-                        .GetHistoricalBarsAsync(new HistoricalCryptoBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
-                            DateTime.Now, BarTimeFrame.Hour)).Result.Items;
-                    minuteBars = ApiRecords.CryptoDataClient
-                        .GetHistoricalBarsAsync(new HistoricalCryptoBarsRequest(stock.Symbol, DateTime.Now.AddYears(-1),
-                            DateTime.Now, BarTimeFrame.Minute)).Result.Items;
-                    hourPrices = ApiRecords.CryptoDataClient
-                        .GetHistoricalQuotesAsync(new HistoricalCryptoQuotesRequest(stock.Symbol, DateTime.Now.AddYears(-1),
-                            DateTime.Now)).Result.Items;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+                switch (stock.SType)
+                {
+                    case AssetClass.UsEquity:
+                        hourBars = ApiRecords.DataClient
+                            .GetHistoricalBarsAsync(new HistoricalBarsRequest(stock.Symbol, DateTime.Now.AddHours(-330 * (i+1)),
+                                DateTime.Now.AddHours(-330 * i), BarTimeFrame.Hour)).Result.Items;
+                        hourPrices = ApiRecords.DataClient
+                            .GetHistoricalQuotesAsync(new HistoricalQuotesRequest(stock.Symbol, DateTime.Now.AddHours(-10 * (i+1)),
+                                DateTime.Now.AddHours(-10 * i))).Result.Items;
+                        break;
+                    case AssetClass.Crypto:
+                        hourBars = ApiRecords.CryptoDataClient
+                            .GetHistoricalBarsAsync(new HistoricalCryptoBarsRequest(stock.Symbol, DateTime.Now.AddHours(-330 * (i+1)),
+                                DateTime.Now.AddHours(-330 * i), BarTimeFrame.Hour)).Result.Items;
+                        hourPrices = ApiRecords.CryptoDataClient
+                            .GetHistoricalQuotesAsync(new HistoricalCryptoQuotesRequest(stock.Symbol, DateTime.Now.AddHours(-10 * (i+1)),
+                                DateTime.Now.AddHours(-10 * i))).Result.Items;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                foreach (KeyValuePair<string,IReadOnlyList<IBar>> pair in hourBars)
+                {
+                    finalBars.AddRange(pair.Value.ToList());
+                }
+                foreach (KeyValuePair<string,IReadOnlyList<IQuote>> pair in hourPrices)
+                {
+                    finalQuotes.AddRange(pair.Value.ToList());
+                }
             }
+
+            finalBars = finalBars.OrderBy(b => b.TimeUtc).ToList();
+            finalQuotes = finalQuotes.OrderBy(b => b.TimestampUtc).ToList();
+            
+            stock.LastQuote = finalQuotes.LastOrDefault();
             Console.WriteLine($"Got History for {stock.Name}");
-            stock.UpdateHostoricalData(hourBars[stock.Symbol], hourPrices[stock.Symbol], minuteBars[stock.Symbol]);
+            stock.UpdateHostoricalData(finalBars, finalQuotes);
+            WorkingData.Logger.UpdateLogData(stock);
         }
 
         internal static Stock.PositionInformation? GetLatestPosition(Stock stock)
